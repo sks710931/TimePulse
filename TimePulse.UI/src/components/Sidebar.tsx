@@ -90,11 +90,11 @@ export function Sidebar({
         <div className="h-16 px-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
           {isCollapsed ? (
             <div className="w-full flex items-center justify-center" title={branding.appName || 'Brand Logo'}>
-              <Logo size="sm" showText={false} />
+              <Logo size="sm" isSquare={true} showText={false} />
             </div>
           ) : (
-            <div className="flex items-center gap-2.5 truncate flex-1">
-              <Logo size="sm" showText={false} />
+            <div className="flex items-center gap-2.5 truncate flex-1 min-w-0">
+              <Logo size="md" showText={false} />
               {branding.appName && (
                 <span className="font-bold text-base text-slate-900 dark:text-white truncate">
                   {branding.appName}

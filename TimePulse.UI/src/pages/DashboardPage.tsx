@@ -560,17 +560,17 @@ export function DashboardPage() {
                   <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold mb-3">
                     Live Preview
                   </span>
-                  <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl w-full flex items-center justify-center gap-3 shadow-sm">
+                  <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl w-full min-h-[72px] flex items-center justify-center gap-3 shadow-sm">
                     {customLogoType === 'Svg' && customLogoData ? (
                       <div
-                        className="w-10 h-10 flex items-center justify-center overflow-hidden [&>svg]:w-full [&>svg]:h-full [&>svg]:object-contain"
+                        className="max-h-10 max-w-[220px] flex items-center justify-center [&>svg]:w-auto [&>svg]:h-full [&>svg]:max-h-10 [&>svg]:max-w-[220px] [&>svg]:object-contain"
                         dangerouslySetInnerHTML={{ __html: customLogoData }}
                       />
                     ) : customLogoData ? (
                       <img
                         src={customLogoData}
                         alt="Logo preview"
-                        className="w-10 h-10 object-contain rounded-lg"
+                        className="max-h-10 max-w-[220px] object-contain rounded-lg"
                       />
                     ) : (
                       <Clock className="w-8 h-8 text-indigo-500" />
