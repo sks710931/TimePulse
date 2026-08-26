@@ -13,7 +13,7 @@ public class BrandSettingsConfiguration : IEntityTypeConfiguration<BrandSettings
         builder.HasKey(b => b.Id);
 
         builder.Property(b => b.AppName)
-            .IsRequired()
+            .IsRequired(false)
             .HasMaxLength(150);
 
         builder.Property(b => b.LogoData)

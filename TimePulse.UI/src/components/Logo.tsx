@@ -23,6 +23,8 @@ export function Logo({
     xl: { box: 'w-20 h-20 rounded-3xl', icon: 'w-10 h-10', text: 'text-3xl font-extrabold' },
   }[size]
 
+  const displayName = appName || 'TimePulse'
+
   const renderLogoGraphic = () => {
     // 1. Custom SVG
     if (logoType === 'Svg' && logoData) {
@@ -39,7 +41,7 @@ export function Logo({
       return (
         <img
           src={logoData}
-          alt={appName}
+          alt={displayName}
           className={`${sizeClasses.box} object-contain ${className}`}
         />
       )
@@ -50,7 +52,7 @@ export function Logo({
       return (
         <img
           src={logoData}
-          alt={appName}
+          alt={displayName}
           className={`${sizeClasses.box} object-contain rounded-xl ${className}`}
         />
       )
@@ -71,7 +73,7 @@ export function Logo({
       <div className="inline-flex items-center gap-3">
         {renderLogoGraphic()}
         <span className={`text-white tracking-tight ${sizeClasses.text} ${textClassName}`}>
-          {appName || 'TimePulse'}
+          {displayName}
         </span>
       </div>
     )

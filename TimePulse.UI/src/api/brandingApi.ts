@@ -1,5 +1,5 @@
 export interface BrandSettings {
-  appName: string
+  appName: string | null
   logoData: string | null
   logoType: string
   isCustom: boolean
@@ -7,7 +7,7 @@ export interface BrandSettings {
 }
 
 export interface UpdateBrandPayload {
-  appName: string
+  appName: string | null
   logoData: string | null
   logoType: string
 }

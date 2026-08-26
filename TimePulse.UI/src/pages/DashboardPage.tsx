@@ -54,7 +54,7 @@ export function DashboardPage() {
   const [usersError, setUsersError] = useState<string | null>(null)
 
   // Branding Customization State (Admin)
-  const [customAppName, setCustomAppName] = useState(branding.appName)
+  const [customAppName, setCustomAppName] = useState(branding.appName || '')
   const [customLogoData, setCustomLogoData] = useState<string | null>(branding.logoData)
   const [customLogoType, setCustomLogoType] = useState<string>(branding.logoType)
   const [uploadFileName, setUploadFileName] = useState<string>('')
@@ -62,7 +62,7 @@ export function DashboardPage() {
   const isAdmin = user?.roles.includes('Admin')
 
   useEffect(() => {
-    setCustomAppName(branding.appName)
+    setCustomAppName(branding.appName || '')
     setCustomLogoData(branding.logoData)
     setCustomLogoType(branding.logoType)
   }, [branding.appName, branding.logoData, branding.logoType])
@@ -258,14 +258,13 @@ export function DashboardPage() {
               <div className="md:col-span-2 space-y-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
-                    Application Name
+                    Application Name (Optional - default is TimePulse)
                   </label>
                   <input
                     type="text"
-                    required
                     value={customAppName}
                     onChange={(e) => setCustomAppName(e.target.value)}
-                    placeholder="e.g. Acme TimePulse"
+                    placeholder="Leave blank for TimePulse or enter custom name"
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-700/80 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   />
                 </div>

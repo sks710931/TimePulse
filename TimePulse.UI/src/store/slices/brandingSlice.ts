@@ -4,7 +4,7 @@ import { brandingApi } from '../../api/brandingApi'
 import type { BrandSettings, UpdateBrandPayload } from '../../api/brandingApi'
 
 export interface BrandingState {
-  appName: string
+  appName: string | null
   logoData: string | null
   logoType: string
   isCustom: boolean

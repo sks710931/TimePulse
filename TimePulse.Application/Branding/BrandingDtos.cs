@@ -1,13 +1,13 @@
 namespace TimePulse.Application.Branding;
 
 public record BrandSettingsDto(
-    string AppName,
+    string? AppName,
     string? LogoData,
     string LogoType,
     bool IsCustom,
     DateTime UpdatedAtUtc);
 
 public record UpdateBrandSettingsRequest(
-    string AppName,
+    string? AppName,
     string? LogoData,
     string LogoType);

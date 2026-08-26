@@ -29,11 +29,6 @@ public class BrandingController : ControllerBase
     [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> UpdateBranding([FromBody] UpdateBrandSettingsRequest request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.AppName))
-        {
-            return BadRequest(new { error = "Application name is required." });
-        }
-
         var settings = await _brandingService.UpdateBrandSettingsAsync(request, cancellationToken);
         return Ok(settings);
     }

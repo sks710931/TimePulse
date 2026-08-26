@@ -10,7 +10,7 @@ public class BrandSettings : AggregateRoot<Guid>
     public const string TypeImage = "Image";
     public const string TypeUrl = "Url";
 
-    public string AppName { get; private set; } = DefaultAppName;
+    public string? AppName { get; private set; } = DefaultAppName;
     public string? LogoData { get; private set; }
     public string LogoType { get; private set; } = TypeDefault;
     public DateTime UpdatedAtUtc { get; private set; }
@@ -31,11 +31,9 @@ public class BrandSettings : AggregateRoot<Guid>
         };
     }
 
-    public void Update(string appName, string? logoData, string logoType)
+    public void Update(string? appName, string? logoData, string logoType)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(appName);
-
-        AppName = appName.Trim();
+        AppName = string.IsNullOrWhiteSpace(appName) ? null : appName.Trim();
         LogoData = string.IsNullOrWhiteSpace(logoData) ? null : logoData.Trim();
         LogoType = string.IsNullOrWhiteSpace(logoData) ? TypeDefault : logoType;
         UpdatedAtUtc = DateTime.UtcNow;

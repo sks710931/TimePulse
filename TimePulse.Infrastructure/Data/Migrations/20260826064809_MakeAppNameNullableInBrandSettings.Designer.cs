@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TimePulse.Infrastructure.Data;
@@ -11,9 +12,11 @@ using TimePulse.Infrastructure.Data;
 namespace TimePulse.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(TimePulseDbContext))]
-    partial class TimePulseDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260826064809_MakeAppNameNullableInBrandSettings")]
+    partial class MakeAppNameNullableInBrandSettings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
