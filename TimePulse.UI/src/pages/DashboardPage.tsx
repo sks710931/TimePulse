@@ -238,7 +238,7 @@ export function DashboardPage() {
                 {tabTitles[activeTab]}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">
-                {branding.appName || 'TimePulse'} Enterprise Edition
+                {branding.appName ? `${branding.appName} Enterprise Edition` : 'Enterprise Edition'}
               </p>
             </div>
           </div>
@@ -271,7 +271,7 @@ export function DashboardPage() {
                       Welcome, {user?.name}! 👋
                     </h2>
                     <p className="text-sm text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
-                      Authenticated in <strong>{branding.appName || 'TimePulse'}</strong> via secure <strong>httpOnly JWT cookies</strong> with refresh rotation.
+                      Authenticated in {branding.appName ? <strong>{branding.appName}</strong> : 'the application'} via secure <strong>httpOnly JWT cookies</strong> with refresh rotation.
                     </p>
                   </div>
                   <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl text-emerald-600 dark:text-emerald-400 text-xs font-medium shrink-0">
@@ -289,7 +289,7 @@ export function DashboardPage() {
                     <Sparkles className="w-4 h-4 text-indigo-500" />
                   </div>
                   <div className="text-xl font-bold text-slate-900 dark:text-white truncate">
-                    {branding.appName || 'TimePulse'}
+                    {branding.appName || '(Logo only)'}
                   </div>
                   <div className="text-xs text-slate-500 mt-1">
                     {branding.isCustom ? 'Custom Branding Active' : 'Default Branding'}
@@ -575,9 +575,11 @@ export function DashboardPage() {
                     ) : (
                       <Clock className="w-8 h-8 text-indigo-500" />
                     )}
-                    <span className="font-bold text-slate-900 dark:text-white text-base">
-                      {customAppName || 'TimePulse'}
-                    </span>
+                    {customAppName && (
+                      <span className="font-bold text-slate-900 dark:text-white text-base">
+                        {customAppName}
+                      </span>
+                    )}
                   </div>
                   <span className="text-[11px] text-slate-500 mt-2">
                     Format: {customLogoType} | Status: {customLogoData ? 'Custom' : 'Default'}

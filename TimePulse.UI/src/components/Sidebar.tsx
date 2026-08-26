@@ -89,15 +89,17 @@ export function Sidebar({
         {/* Top Header: Clean Brand Area (No chevron inside) */}
         <div className="h-16 px-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
           {isCollapsed ? (
-            <div className="w-full flex items-center justify-center" title={branding.appName || 'TimePulse'}>
+            <div className="w-full flex items-center justify-center" title={branding.appName || 'Brand Logo'}>
               <Logo size="sm" showText={false} />
             </div>
           ) : (
             <div className="flex items-center gap-2.5 truncate flex-1">
               <Logo size="sm" showText={false} />
-              <span className="font-bold text-base text-slate-900 dark:text-white truncate">
-                {branding.appName || 'TimePulse'}
-              </span>
+              {branding.appName && (
+                <span className="font-bold text-base text-slate-900 dark:text-white truncate">
+                  {branding.appName}
+                </span>
+              )}
             </div>
           )}
 

@@ -45,7 +45,9 @@ export function RegisterPage() {
           <div className="flex justify-center mb-4">
             <Logo size="lg" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{appName}</h1>
+          {appName && (
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{appName}</h1>
+          )}
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Create your administrator account</p>
         </div>
 
