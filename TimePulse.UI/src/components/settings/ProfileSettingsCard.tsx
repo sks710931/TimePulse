@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { RoleBadge } from '../common/RoleBadge'
 import { Alert } from '../common/Alert'
 import { User, Mail, CheckCircle2 } from 'lucide-react'
@@ -11,6 +11,12 @@ interface ProfileSettingsCardProps {
 export function ProfileSettingsCard({ user }: ProfileSettingsCardProps) {
   const [name, setName] = useState(user?.name || user?.fullName || '')
   const [isSaved, setIsSaved] = useState(false)
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name || user.fullName || '')
+    }
+  }, [user])
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,10 +31,10 @@ export function ProfileSettingsCard({ user }: ProfileSettingsCardProps) {
         .join('')
         .toUpperCase()
         .slice(0, 2)
-    : 'U'
+    : user?.email?.charAt(0).toUpperCase() || 'U'
 
   return (
-    <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
+    <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6 max-w-2xl">
       <div className="flex items-center gap-2">
         <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
         <div>
@@ -45,7 +51,7 @@ export function ProfileSettingsCard({ user }: ProfileSettingsCardProps) {
         </div>
         <div className="space-y-1 min-w-0">
           <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-            {user?.name || user?.fullName}
+            {name || user?.name || user?.fullName || 'User'}
           </p>
           <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
             {user?.email}
@@ -67,6 +73,7 @@ export function ProfileSettingsCard({ user }: ProfileSettingsCardProps) {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            placeholder="Your Full Name"
             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-700/80 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
           />
         </div>

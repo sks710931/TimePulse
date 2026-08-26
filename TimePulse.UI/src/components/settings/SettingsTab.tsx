@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { SettingsNavTabs, type SettingsTabId } from './SettingsNavTabs'
 import { ProfileSettingsCard } from './ProfileSettingsCard'
 import { AppearanceSettingsCard } from './AppearanceSettingsCard'
 import { NotificationSettingsCard } from './NotificationSettingsCard'
@@ -9,16 +11,22 @@ interface SettingsTabProps {
 }
 
 export function SettingsTab({ user }: SettingsTabProps) {
+  const [activeSubTab, setActiveSubTab] = useState<SettingsTabId>('profile')
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ProfileSettingsCard user={user} />
-        <AppearanceSettingsCard />
-      </div>
+      {/* Horizontal Tabs Navigation */}
+      <SettingsNavTabs
+        activeTab={activeSubTab}
+        onSelectTab={setActiveSubTab}
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <NotificationSettingsCard />
-        <SecuritySettingsCard />
+      {/* Focused Active Tab Content */}
+      <div className="pt-2">
+        {activeSubTab === 'profile' && <ProfileSettingsCard user={user} />}
+        {activeSubTab === 'appearance' && <AppearanceSettingsCard />}
+        {activeSubTab === 'notifications' && <NotificationSettingsCard />}
+        {activeSubTab === 'security' && <SecuritySettingsCard />}
       </div>
     </div>
   )
