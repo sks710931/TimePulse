@@ -9,6 +9,24 @@ export interface ThemeState {
 
 const STORAGE_KEY = 'tp_theme_mode'
 
+function adjustHex(hex: string, percent: number): string {
+  try {
+    let cleanHex = hex.replace('#', '')
+    if (cleanHex.length === 3) {
+      cleanHex = cleanHex.split('').map((c) => c + c).join('')
+    }
+    const num = parseInt(cleanHex, 16)
+    if (isNaN(num)) return hex
+    const amt = Math.round(2.55 * percent)
+    const R = Math.max(0, Math.min(255, (num >> 16) + amt))
+    const G = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt))
+    const B = Math.max(0, Math.min(255, (num & 0x0000ff) + amt))
+    return `#${((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1)}`
+  } catch {
+    return hex
+  }
+}
+
 export function applyThemeToDom(mode: ThemeMode) {
   const root = document.documentElement
   if (mode === 'dark') {
@@ -41,6 +59,7 @@ export function applyBrandColorsToDom(
     : primaryLight || '#4f46e5'
 
   root.style.setProperty('--color-primary', activeColor)
+  root.style.setProperty('--color-primary-hover', adjustHex(activeColor, -15))
 }
 
 const getInitialTheme = (): ThemeMode => {
