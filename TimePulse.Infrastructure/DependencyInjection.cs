@@ -42,11 +42,13 @@ public static class DependencyInjection
         // Repositories
         services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IBrandSettingsRepository, BrandSettingsRepository>();
 
-        // Auth & User Services
+        // Services
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IBrandingService, BrandingService>();
 
         return services;
     }

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import type { ChangeEvent } from 'react'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { logoutUser } from '../store/slices/authSlice'
+import { saveBranding, resetBranding, clearBrandingMessages } from '../store/slices/brandingSlice'
 import { increment, decrement, reset } from '../store/slices/counterSlice'
+import { Logo } from '../components/Logo'
 import {
-  Clock,
   LogOut,
   Users,
   Shield,
@@ -13,6 +15,11 @@ import {
   CheckCircle2,
   Calendar,
   Layers,
+  Palette,
+  Upload,
+  RotateCcw,
+  Sparkles,
+  AlertCircle,
 } from 'lucide-react'
 
 interface WeatherItem {
@@ -33,8 +40,10 @@ interface UserItem {
 export function DashboardPage() {
   const dispatch = useAppDispatch()
   const { user } = useAppSelector((state) => state.auth)
+  const branding = useAppSelector((state) => state.branding)
   const counter = useAppSelector((state) => state.counter.value)
 
+  // Weather & Users State
   const [forecasts, setForecasts] = useState<WeatherItem[]>([])
   const [forecastLoading, setForecastLoading] = useState(false)
   const [forecastError, setForecastError] = useState<string | null>(null)
@@ -43,7 +52,19 @@ export function DashboardPage() {
   const [usersLoading, setUsersLoading] = useState(false)
   const [usersError, setUsersError] = useState<string | null>(null)
 
+  // Branding Customization State (Admin)
+  const [customAppName, setCustomAppName] = useState(branding.appName)
+  const [customLogoData, setCustomLogoData] = useState<string | null>(branding.logoData)
+  const [customLogoType, setCustomLogoType] = useState<string>(branding.logoType)
+  const [uploadFileName, setUploadFileName] = useState<string>('')
+
   const isAdmin = user?.roles.includes('Admin')
+
+  useEffect(() => {
+    setCustomAppName(branding.appName)
+    setCustomLogoData(branding.logoData)
+    setCustomLogoType(branding.logoType)
+  }, [branding.appName, branding.logoData, branding.logoType])
 
   const fetchWeather = async () => {
     setForecastLoading(true)
@@ -91,23 +112,57 @@ export function DashboardPage() {
     dispatch(logoutUser())
   }
 
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadFileName(file.name)
+    const isSvg = file.type === 'image/svg+xml' || file.name.endsWith('.svg')
+
+    const reader = new FileReader()
+    if (isSvg) {
+      reader.onload = (event) => {
+        const content = event.target?.result as string
+        setCustomLogoData(content)
+        setCustomLogoType('Svg')
+      }
+      reader.readAsText(file)
+    } else {
+      reader.onload = (event) => {
+        const content = event.target?.result as string
+        setCustomLogoData(content)
+        setCustomLogoType('Image')
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleSaveBranding = async () => {
+    dispatch(clearBrandingMessages())
+    await dispatch(
+      saveBranding({
+        appName: customAppName,
+        logoData: customLogoData,
+        logoType: customLogoType,
+      })
+    )
+  }
+
+  const handleResetBranding = async () => {
+    dispatch(clearBrandingMessages())
+    setUploadFileName('')
+    await dispatch(resetBranding())
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       {/* Top Navbar */}
       <header className="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400">
-            <Clock className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-lg text-white">TimePulse</span>
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                Dashboard
-              </span>
-            </div>
-            <p className="text-xs text-slate-400">Enterprise Time & Pulse Tracking</p>
-          </div>
+          <Logo size="md" showText={true} />
+          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            Dashboard
+          </span>
         </div>
 
         {/* User Info & Actions */}
@@ -147,7 +202,7 @@ export function DashboardPage() {
             <div>
               <h1 className="text-2xl font-bold text-white mb-1">Welcome back, {user?.name}! 👋</h1>
               <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
-                You are securely authenticated using <strong>JWT in httpOnly cookies</strong> (1-min access token + 7-day refresh token rotation).
+                You are securely authenticated in <strong>{branding.appName}</strong> using <strong>JWT in httpOnly cookies</strong>.
               </p>
             </div>
             <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl text-emerald-400 text-xs font-medium shrink-0">
@@ -157,7 +212,146 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* Admin Management Section */}
+        {/* Admin Whitelabeling & Branding Management Section */}
+        {isAdmin && (
+          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Palette className="w-5 h-5 text-indigo-400" />
+                <h2 className="text-lg font-semibold text-white">Whitelabeling & Custom Branding (Admin Only)</h2>
+              </div>
+              {branding.isCustom ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/30">
+                  <Sparkles className="w-3 h-3" />
+                  Custom Branding Active
+                </span>
+              ) : (
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">
+                  Default TimePulse Branding
+                </span>
+              )}
+            </div>
+
+            <p className="text-xs text-slate-400 mb-6">
+              Customize the application name and upload your company logo (supports <strong>SVG vector</strong>, <strong>PNG</strong>, and <strong>WebP/JPG images</strong>). Changes will apply globally across Login, Register, and Dashboard.
+            </p>
+
+            {branding.error && (
+              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-red-400 text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{branding.error}</span>
+              </div>
+            )}
+
+            {branding.successMessage && (
+              <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2 text-emerald-400 text-xs">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{branding.successMessage}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+              {/* Settings Form */}
+              <div className="md:col-span-2 space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
+                    Application Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={customAppName}
+                    onChange={(e) => setCustomAppName(e.target.value)}
+                    placeholder="e.g. Acme TimePulse"
+                    className="w-full px-4 py-2.5 bg-slate-950/60 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
+                    Upload Custom Logo (SVG, PNG, JPG, WebP)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-200 text-xs font-semibold cursor-pointer transition-all">
+                      <Upload className="w-4 h-4 text-indigo-400" />
+                      <span>Choose File...</span>
+                      <input
+                        type="file"
+                        accept=".svg,.png,.jpg,.jpeg,.webp,image/*"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    <span className="text-xs text-slate-400 truncate max-w-xs">
+                      {uploadFileName || (customLogoData ? `Logo (${customLogoType}) loaded` : 'No file chosen (using default logo)')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="pt-2 flex items-center gap-3">
+                  <button
+                    onClick={handleSaveBranding}
+                    disabled={branding.isSaving}
+                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/30 disabled:opacity-60 cursor-pointer"
+                  >
+                    {branding.isSaving ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Save Branding</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={handleResetBranding}
+                    disabled={branding.isSaving}
+                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 disabled:opacity-60 cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Reset to Default</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Live Preview Card */}
+              <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-5 text-center flex flex-col items-center justify-center">
+                <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-3">
+                  Live Navbar Preview
+                </span>
+                <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl w-full flex items-center justify-center gap-3">
+                  {customLogoType === 'Svg' && customLogoData ? (
+                    <div
+                      className="w-10 h-10 flex items-center justify-center overflow-hidden [&>svg]:w-full [&>svg]:h-full [&>svg]:object-contain"
+                      dangerouslySetInnerHTML={{ __html: customLogoData }}
+                    />
+                  ) : customLogoData ? (
+                    <img
+                      src={customLogoData}
+                      alt="Logo preview"
+                      className="w-10 h-10 object-contain rounded-lg"
+                    />
+                  ) : (
+                    <Logo size="md" />
+                  )}
+                  <span className="font-bold text-white text-base">
+                    {customAppName || 'TimePulse'}
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-500 mt-2">
+                  Format: {customLogoType} | Status: {customLogoData ? 'Custom' : 'Default'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* User Management Section */}
         {isAdmin && (
           <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-lg">
             <div className="flex items-center justify-between mb-4">

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from './store/hooks'
 import { checkAuth } from './store/slices/authSlice'
+import { fetchBranding } from './store/slices/brandingSlice'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { PublicOnlyRoute } from './components/PublicOnlyRoute'
 import { LoginPage } from './pages/LoginPage'
@@ -12,10 +13,18 @@ import { Loader2 } from 'lucide-react'
 function App() {
   const dispatch = useAppDispatch()
   const { isAuthenticated, isCheckingAuth } = useAppSelector((state) => state.auth)
+  const { appName } = useAppSelector((state) => state.branding)
 
   useEffect(() => {
     dispatch(checkAuth())
+    dispatch(fetchBranding())
   }, [dispatch])
+
+  useEffect(() => {
+    if (appName) {
+      document.title = appName
+    }
+  }, [appName])
 
   return (
     <BrowserRouter>
@@ -27,7 +36,7 @@ function App() {
             isCheckingAuth ? (
               <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400 gap-3">
                 <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-                <p className="text-sm font-medium">Loading TimePulse...</p>
+                <p className="text-sm font-medium">Loading {appName}...</p>
               </div>
             ) : isAuthenticated ? (
               <Navigate to="/dashboard" replace />

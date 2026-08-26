@@ -3,7 +3,8 @@ import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { loginUser, clearError } from '../store/slices/authSlice'
-import { Clock, Lock, Mail, ArrowRight, AlertCircle, Loader2 } from 'lucide-react'
+import { Logo } from '../components/Logo'
+import { Lock, Mail, ArrowRight, AlertCircle, Loader2 } from 'lucide-react'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
@@ -11,6 +12,7 @@ export function LoginPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const { isLoading, error, isAuthenticated } = useAppSelector((state) => state.auth)
+  const { appName } = useAppSelector((state) => state.branding)
 
   useEffect(() => {
     dispatch(clearError())
@@ -33,10 +35,10 @@ export function LoginPage() {
       <div className="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl p-8 shadow-2xl shadow-indigo-500/10">
         {/* Brand Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 mb-4 shadow-inner">
-            <Clock className="w-7 h-7" />
+          <div className="flex justify-center mb-4">
+            <Logo size="lg" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">TimePulse</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white">{appName}</h1>
           <p className="text-sm text-slate-400 mt-1">Sign in to access your dashboard</p>
         </div>
 
