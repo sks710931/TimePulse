@@ -1,26 +1,55 @@
+import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from './store/hooks'
-import { increment, decrement, incrementByAmount, reset } from './store/slices/counterSlice'
-import './App.css'
+import { checkAuth } from './store/slices/authSlice'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import { PublicOnlyRoute } from './components/PublicOnlyRoute'
+import { LoginPage } from './pages/LoginPage'
+import { RegisterPage } from './pages/RegisterPage'
+import { DashboardPage } from './pages/DashboardPage'
 
 function App() {
-  const count = useAppSelector((state) => state.counter.value)
   const dispatch = useAppDispatch()
+  const { isAuthenticated, isCheckingAuth } = useAppSelector((state) => state.auth)
+
+  useEffect(() => {
+    dispatch(checkAuth())
+  }, [dispatch])
 
   return (
-    <div style={{ maxWidth: '600px', margin: '40px auto', textAlign: 'center', fontFamily: 'sans-serif' }}>
-      <h1>TimePulse UI</h1>
-      <p style={{ color: '#666' }}>React + TypeScript + Redux Toolkit</p>
+    <BrowserRouter>
+      <Routes>
+        {/* Root Route: / => if authenticated /dashboard else /login */}
+        <Route
+          path="/"
+          element={
+            isCheckingAuth ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+                <p>Loading TimePulse...</p>
+              </div>
+            ) : isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
 
-      <div style={{ margin: '30px 0', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-        <h2>Counter: {count}</h2>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '15px' }}>
-          <button onClick={() => dispatch(decrement())} style={{ padding: '8px 16px' }}>- 1</button>
-          <button onClick={() => dispatch(increment())} style={{ padding: '8px 16px' }}>+ 1</button>
-          <button onClick={() => dispatch(incrementByAmount(5))} style={{ padding: '8px 16px' }}>+ 5</button>
-          <button onClick={() => dispatch(reset())} style={{ padding: '8px 16px' }}>Reset</button>
-        </div>
-      </div>
-    </div>
+        {/* Public Routes (Redirect to /dashboard if already authenticated) */}
+        <Route element={<PublicOnlyRoute />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Route>
+
+        {/* Protected Routes (Redirect to /login if not authenticated) */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+        </Route>
+
+        {/* Catch-all: redirect to / */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
