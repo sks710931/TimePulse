@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TimePulse.Application.Common.Interfaces;
 using TimePulse.Domain.Repositories;
+using TimePulse.Infrastructure.Auth;
 using TimePulse.Infrastructure.Data;
 using TimePulse.Infrastructure.Repositories;
 
@@ -20,7 +21,13 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<TimePulseDbContext>());
 
+        // Repositories
         services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
+        services.AddScoped<IUserRepository, UserRepository>();
+
+        // Auth Services
+        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }
