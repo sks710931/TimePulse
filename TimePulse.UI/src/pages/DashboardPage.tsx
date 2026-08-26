@@ -7,10 +7,8 @@ import { OverviewTab } from '../components/dashboard/OverviewTab'
 import { TimeTrackerTab } from '../components/dashboard/TimeTrackerTab'
 import { UserManagementTab } from '../components/dashboard/UserManagementTab'
 import { WhitelabelingTab } from '../components/dashboard/WhitelabelingTab'
-import { ApiTesterTab } from '../components/dashboard/ApiTesterTab'
 import { ReduxDemoTab } from '../components/dashboard/ReduxDemoTab'
 import type { UserItem } from '../components/dashboard/UserTable'
-import type { WeatherItem } from '../components/dashboard/ForecastCard'
 
 export function DashboardPage() {
   const { user } = useAppSelector((state) => state.auth)
@@ -21,11 +19,6 @@ export function DashboardPage() {
     return localStorage.getItem('tp_sidebar_collapsed') === 'true'
   })
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-
-  // Protected API (Weather) State
-  const [forecasts, setForecasts] = useState<WeatherItem[]>([])
-  const [forecastLoading, setForecastLoading] = useState(false)
-  const [forecastError, setForecastError] = useState<string | null>(null)
 
   // Users Management State
   const [users, setUsers] = useState<UserItem[]>([])
@@ -40,19 +33,6 @@ export function DashboardPage() {
       localStorage.setItem('tp_sidebar_collapsed', String(next))
       return next
     })
-  }
-
-  const fetchWeather = async () => {
-    setForecastLoading(true)
-    setForecastError(null)
-    try {
-      const data = await apiClient.get<WeatherItem[]>('/weatherforecast')
-      setForecasts(data)
-    } catch (err: unknown) {
-      setForecastError(err instanceof Error ? err.message : 'Error loading forecast')
-    } finally {
-      setForecastLoading(false)
-    }
   }
 
   const fetchUsers = async () => {
@@ -70,7 +50,6 @@ export function DashboardPage() {
   }
 
   useEffect(() => {
-    fetchWeather()
     if (isAdmin) {
       fetchUsers()
     }
@@ -81,7 +60,6 @@ export function DashboardPage() {
     timetracker: 'Time Tracker',
     users: 'User Management',
     branding: 'Whitelabeling & Branding',
-    weather: 'Protected API Tester',
     redux: 'Redux Toolkit Demo',
   }
 
@@ -130,15 +108,6 @@ export function DashboardPage() {
           )}
 
           {activeTab === 'branding' && isAdmin && <WhitelabelingTab />}
-
-          {activeTab === 'weather' && (
-            <ApiTesterTab
-              forecasts={forecasts}
-              isLoading={forecastLoading}
-              error={forecastError}
-              onRefresh={fetchWeather}
-            />
-          )}
 
           {activeTab === 'redux' && <ReduxDemoTab />}
         </main>
