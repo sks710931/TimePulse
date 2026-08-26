@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from './store/hooks'
 import { checkAuth } from './store/slices/authSlice'
 import { fetchBranding } from './store/slices/brandingSlice'
+import { applyThemeToDom } from './store/slices/themeSlice'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { PublicOnlyRoute } from './components/PublicOnlyRoute'
 import { LoginPage } from './pages/LoginPage'
@@ -14,6 +15,7 @@ function App() {
   const dispatch = useAppDispatch()
   const { isAuthenticated, isCheckingAuth } = useAppSelector((state) => state.auth)
   const { appName } = useAppSelector((state) => state.branding)
+  const themeMode = useAppSelector((state) => state.theme.mode)
 
   useEffect(() => {
     dispatch(checkAuth())
@@ -26,6 +28,18 @@ function App() {
     }
   }, [appName])
 
+  useEffect(() => {
+    applyThemeToDom(themeMode)
+
+    if (themeMode === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      const handleChange = () => applyThemeToDom('system')
+
+      mediaQuery.addEventListener('change', handleChange)
+      return () => mediaQuery.removeEventListener('change', handleChange)
+    }
+  }, [themeMode])
+
   return (
     <BrowserRouter>
       <Routes>
@@ -34,8 +48,8 @@ function App() {
           path="/"
           element={
             isCheckingAuth ? (
-              <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400 gap-3">
-                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+              <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 gap-3">
+                <Loader2 className="w-8 h-8 text-indigo-600 dark:text-indigo-500 animate-spin" />
                 <p className="text-sm font-medium">Loading {appName}...</p>
               </div>
             ) : isAuthenticated ? (
