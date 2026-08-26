@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.1738743">
+  <PropertyGroup>
+    <StartupCommand>npm run dev</StartupCommand>
+    <JavaScriptTestRoot>src\</JavaScriptTestRoot>
+    <JavaScriptTestFramework>Jest</JavaScriptTestFramework>
+    <!-- Allows the build to produce a build output -->
+    <ShouldRunBuildScript>true</ShouldRunBuildScript>
+    <BuildCommand>npm run build</BuildCommand>
+    <!-- Folder where production build objects will be placed -->
+    <BuildOutputFolder>$(MSBuildProjectDirectory)\..\TimePulse.API\wwwroot</BuildOutputFolder>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Automatically include all project files except node_modules and build outputs in Visual Studio Solution Explorer -->
+    <None Include="**" Exclude="node_modules\**;dist\**;.git\**;.vs\**" />
+  </ItemGroup>
+</Project>

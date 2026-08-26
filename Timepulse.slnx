@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="TimePulse.API/TimePulse.API.csproj" />
+  <Project Path="TimePulse.Application/TimePulse.Application.csproj" />
+  <Project Path="TimePulse.Domain/TimePulse.Domain.csproj" />
+  <Project Path="TimePulse.Infrastructure/TimePulse.Infrastructure.csproj" />
+  <Project Path="TimePulse.UI/TimePulse.UI.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+</Solution>
