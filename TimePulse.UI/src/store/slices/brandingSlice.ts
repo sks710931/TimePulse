@@ -7,6 +7,8 @@ export interface BrandingState {
   appName: string | null
   logoData: string | null
   logoType: string
+  logoDarkData: string | null
+  logoDarkType: string
   isCustom: boolean
   isLoading: boolean
   isSaving: boolean
@@ -18,6 +20,8 @@ const initialState: BrandingState = {
   appName: 'TimePulse',
   logoData: null,
   logoType: 'Default',
+  logoDarkData: null,
+  logoDarkType: 'Default',
   isCustom: false,
   isLoading: false,
   isSaving: false,
@@ -82,6 +86,8 @@ export const brandingSlice = createSlice({
         state.appName = action.payload.appName
         state.logoData = action.payload.logoData
         state.logoType = action.payload.logoType
+        state.logoDarkData = action.payload.logoDarkData
+        state.logoDarkType = action.payload.logoDarkType || 'Default'
         state.isCustom = action.payload.isCustom
       })
       .addCase(fetchBranding.rejected, (state, action) => {
@@ -101,6 +107,8 @@ export const brandingSlice = createSlice({
         state.appName = action.payload.appName
         state.logoData = action.payload.logoData
         state.logoType = action.payload.logoType
+        state.logoDarkData = action.payload.logoDarkData
+        state.logoDarkType = action.payload.logoDarkType || 'Default'
         state.isCustom = action.payload.isCustom
         state.successMessage = 'Branding updated successfully!'
       })
@@ -121,6 +129,8 @@ export const brandingSlice = createSlice({
         state.appName = action.payload.appName
         state.logoData = action.payload.logoData
         state.logoType = action.payload.logoType
+        state.logoDarkData = action.payload.logoDarkData
+        state.logoDarkType = action.payload.logoDarkType || 'Default'
         state.isCustom = action.payload.isCustom
         state.successMessage = 'Branding reset to default!'
       })

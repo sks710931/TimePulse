@@ -16,26 +16,21 @@ public class BrandingService : IBrandingService
     public async Task<BrandSettingsDto> GetBrandSettingsAsync(CancellationToken cancellationToken = default)
     {
         var settings = await _repository.GetSettingsAsync(cancellationToken);
-        return new BrandSettingsDto(
-            settings.AppName,
-            settings.LogoData,
-            settings.LogoType,
-            settings.IsCustom,
-            settings.UpdatedAtUtc);
+        return MapToDto(settings);
     }
 
     public async Task<BrandSettingsDto> UpdateBrandSettingsAsync(UpdateBrandSettingsRequest request, CancellationToken cancellationToken = default)
     {
         var settings = await _repository.GetSettingsAsync(cancellationToken);
-        settings.Update(request.AppName, request.LogoData, request.LogoType);
-        await _repository.UpdateSettingsAsync(settings, cancellationToken);
+        settings.Update(
+            request.AppName,
+            request.LogoData,
+            request.LogoType,
+            request.LogoDarkData,
+            request.LogoDarkType);
 
-        return new BrandSettingsDto(
-            settings.AppName,
-            settings.LogoData,
-            settings.LogoType,
-            settings.IsCustom,
-            settings.UpdatedAtUtc);
+        await _repository.UpdateSettingsAsync(settings, cancellationToken);
+        return MapToDto(settings);
     }
 
     public async Task<BrandSettingsDto> ResetToDefaultAsync(CancellationToken cancellationToken = default)
@@ -43,11 +38,17 @@ public class BrandingService : IBrandingService
         var settings = await _repository.GetSettingsAsync(cancellationToken);
         settings.ResetToDefault();
         await _repository.UpdateSettingsAsync(settings, cancellationToken);
+        return MapToDto(settings);
+    }
 
+    private static BrandSettingsDto MapToDto(Domain.Entities.BrandSettings settings)
+    {
         return new BrandSettingsDto(
             settings.AppName,
             settings.LogoData,
             settings.LogoType,
+            settings.LogoDarkData,
+            settings.LogoDarkType,
             settings.IsCustom,
             settings.UpdatedAtUtc);
     }

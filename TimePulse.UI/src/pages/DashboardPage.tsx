@@ -107,7 +107,10 @@ export function DashboardPage() {
   const [customAppName, setCustomAppName] = useState(branding.appName || '')
   const [customLogoData, setCustomLogoData] = useState<string | null>(branding.logoData)
   const [customLogoType, setCustomLogoType] = useState<string>(branding.logoType)
-  const [uploadFileName, setUploadFileName] = useState<string>('')
+  const [customLogoDarkData, setCustomLogoDarkData] = useState<string | null>(branding.logoDarkData)
+  const [customLogoDarkType, setCustomLogoDarkType] = useState<string>(branding.logoDarkType)
+  const [uploadFileNameLight, setUploadFileNameLight] = useState<string>('')
+  const [uploadFileNameDark, setUploadFileNameDark] = useState<string>('')
 
   const isAdmin = user?.roles.includes('Admin')
 
@@ -115,7 +118,9 @@ export function DashboardPage() {
     setCustomAppName(branding.appName || '')
     setCustomLogoData(branding.logoData)
     setCustomLogoType(branding.logoType)
-  }, [branding.appName, branding.logoData, branding.logoType])
+    setCustomLogoDarkData(branding.logoDarkData)
+    setCustomLogoDarkType(branding.logoDarkType)
+  }, [branding.appName, branding.logoData, branding.logoType, branding.logoDarkData, branding.logoDarkType])
 
   const fetchWeather = async () => {
     setForecastLoading(true)
@@ -151,26 +156,47 @@ export function DashboardPage() {
     }
   }, [isAdmin])
 
-  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleLightFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    setUploadFileName(file.name)
+    setUploadFileNameLight(file.name)
     const isSvg = file.type === 'image/svg+xml' || file.name.endsWith('.svg')
 
     const reader = new FileReader()
     if (isSvg) {
       reader.onload = (event) => {
-        const content = event.target?.result as string
-        setCustomLogoData(content)
+        setCustomLogoData(event.target?.result as string)
         setCustomLogoType('Svg')
       }
       reader.readAsText(file)
     } else {
       reader.onload = (event) => {
-        const content = event.target?.result as string
-        setCustomLogoData(content)
+        setCustomLogoData(event.target?.result as string)
         setCustomLogoType('Image')
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleDarkFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadFileNameDark(file.name)
+    const isSvg = file.type === 'image/svg+xml' || file.name.endsWith('.svg')
+
+    const reader = new FileReader()
+    if (isSvg) {
+      reader.onload = (event) => {
+        setCustomLogoDarkData(event.target?.result as string)
+        setCustomLogoDarkType('Svg')
+      }
+      reader.readAsText(file)
+    } else {
+      reader.onload = (event) => {
+        setCustomLogoDarkData(event.target?.result as string)
+        setCustomLogoDarkType('Image')
       }
       reader.readAsDataURL(file)
     }
@@ -183,13 +209,16 @@ export function DashboardPage() {
         appName: customAppName,
         logoData: customLogoData,
         logoType: customLogoType,
+        logoDarkData: customLogoDarkData,
+        logoDarkType: customLogoDarkType,
       })
     )
   }
 
   const handleResetBranding = async () => {
     dispatch(clearBrandingMessages())
-    setUploadFileName('')
+    setUploadFileNameLight('')
+    setUploadFileNameDark('')
     await dispatch(resetBranding())
   }
 
@@ -503,33 +532,170 @@ export function DashboardPage() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
-                      Upload Custom Logo (SVG, PNG, JPG, WebP)
-                    </label>
-                    <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 text-xs font-semibold cursor-pointer transition-all">
-                        <Upload className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                        <span>Choose File...</span>
-                        <input
-                          type="file"
-                          accept=".svg,.png,.jpg,.jpeg,.webp,image/*"
-                          onChange={handleFileUpload}
-                          className="hidden"
-                        />
-                      </label>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xs">
-                        {uploadFileName || (customLogoData ? `Logo (${customLogoType}) loaded` : 'No file chosen (using default logo)')}
-                      </span>
+                  {/* Dual Logo Configuration (Light Mode & Dark Mode) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    {/* 1. Light Mode Logo Card */}
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                            ☀️ Light Mode Logo
+                          </span>
+                          <span className="text-[11px] px-2 py-0.5 rounded-md font-medium bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            {customLogoData ? customLogoType : 'Default'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Used on light theme backgrounds (Login, Sidebar, Headers).
+                        </p>
+                      </div>
+
+                      {/* Mini Light Preview */}
+                      <div className="p-3 bg-slate-100 border border-slate-300/80 rounded-xl min-h-[58px] flex items-center justify-center gap-2 shadow-inner">
+                        {customLogoType === 'Svg' && customLogoData ? (
+                          <div
+                            className="h-7 max-w-[130px] flex items-center justify-center [&>svg]:h-full [&>svg]:w-auto [&>svg]:max-h-7 [&>svg]:max-w-[130px] [&>svg]:object-contain overflow-hidden"
+                            dangerouslySetInnerHTML={{ __html: customLogoData }}
+                          />
+                        ) : customLogoData ? (
+                          <img
+                            src={customLogoData}
+                            alt="Light logo preview"
+                            className="h-7 max-w-[130px] object-contain"
+                          />
+                        ) : (
+                          <Clock className="w-6 h-6 text-indigo-600" />
+                        )}
+                        {customAppName && (
+                          <span className="font-bold text-slate-900 text-sm truncate max-w-[120px]">
+                            {customAppName}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <label className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 text-xs font-semibold cursor-pointer transition-all">
+                          <Upload className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                          <span>{customLogoData ? 'Change Light Logo' : 'Upload Light Logo'}</span>
+                          <input
+                            type="file"
+                            accept=".svg,.png,.jpg,.jpeg,.webp,image/*"
+                            onChange={handleLightFileUpload}
+                            className="hidden"
+                          />
+                        </label>
+                        {customLogoData && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCustomLogoData(null)
+                              setCustomLogoType('Default')
+                              setUploadFileNameLight('')
+                            }}
+                            className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                            title="Clear light logo"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      {uploadFileNameLight && (
+                        <span className="text-[11px] text-slate-500 truncate block">
+                          File: {uploadFileNameLight}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* 2. Dark Mode Logo Card */}
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                            🌙 Dark Mode Logo
+                          </span>
+                          <span className="text-[11px] px-2 py-0.5 rounded-md font-medium bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            {customLogoDarkData ? customLogoDarkType : 'Inherits Light'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Used on dark theme backgrounds. Falls back to Light Logo if omitted.
+                        </p>
+                      </div>
+
+                      {/* Mini Dark Preview */}
+                      <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl min-h-[58px] flex items-center justify-center gap-2 shadow-inner">
+                        {customLogoDarkType === 'Svg' && customLogoDarkData ? (
+                          <div
+                            className="h-7 max-w-[130px] flex items-center justify-center [&>svg]:h-full [&>svg]:w-auto [&>svg]:max-h-7 [&>svg]:max-w-[130px] [&>svg]:object-contain overflow-hidden"
+                            dangerouslySetInnerHTML={{ __html: customLogoDarkData }}
+                          />
+                        ) : customLogoDarkData ? (
+                          <img
+                            src={customLogoDarkData}
+                            alt="Dark logo preview"
+                            className="h-7 max-w-[130px] object-contain"
+                          />
+                        ) : customLogoType === 'Svg' && customLogoData ? (
+                          <div
+                            className="h-7 max-w-[130px] flex items-center justify-center [&>svg]:h-full [&>svg]:w-auto [&>svg]:max-h-7 [&>svg]:max-w-[130px] [&>svg]:object-contain overflow-hidden"
+                            dangerouslySetInnerHTML={{ __html: customLogoData }}
+                          />
+                        ) : customLogoData ? (
+                          <img
+                            src={customLogoData}
+                            alt="Fallback logo preview"
+                            className="h-7 max-w-[130px] object-contain"
+                          />
+                        ) : (
+                          <Clock className="w-6 h-6 text-indigo-400" />
+                        )}
+                        {customAppName && (
+                          <span className="font-bold text-white text-sm truncate max-w-[120px]">
+                            {customAppName}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <label className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 text-xs font-semibold cursor-pointer transition-all">
+                          <Upload className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                          <span>{customLogoDarkData ? 'Change Dark Logo' : 'Upload Dark Logo'}</span>
+                          <input
+                            type="file"
+                            accept=".svg,.png,.jpg,.jpeg,.webp,image/*"
+                            onChange={handleDarkFileUpload}
+                            className="hidden"
+                          />
+                        </label>
+                        {customLogoDarkData && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCustomLogoDarkData(null)
+                              setCustomLogoDarkType('Default')
+                              setUploadFileNameDark('')
+                            }}
+                            className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                            title="Clear dark logo"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      {uploadFileNameDark && (
+                        <span className="text-[11px] text-slate-500 truncate block">
+                          File: {uploadFileNameDark}
+                        </span>
+                      )}
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="pt-2 flex items-center gap-3">
+                  <div className="pt-3 flex items-center gap-3">
                     <button
                       onClick={handleSaveBranding}
                       disabled={branding.isSaving}
-                      className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/30 disabled:opacity-60 cursor-pointer"
+                      className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/30 disabled:opacity-60 cursor-pointer"
                     >
                       {branding.isSaving ? (
                         <>
@@ -555,35 +721,72 @@ export function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Live Preview Card */}
-                <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl p-5 text-center flex flex-col items-center justify-center transition-colors duration-200">
-                  <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold mb-3">
-                    Live Preview
-                  </span>
-                  <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl w-full min-h-[72px] flex items-center justify-center gap-3 shadow-sm">
-                    {customLogoType === 'Svg' && customLogoData ? (
-                      <div
-                        className="max-h-10 max-w-[220px] flex items-center justify-center [&>svg]:w-auto [&>svg]:h-full [&>svg]:max-h-10 [&>svg]:max-w-[220px] [&>svg]:object-contain"
-                        dangerouslySetInnerHTML={{ __html: customLogoData }}
-                      />
-                    ) : customLogoData ? (
-                      <img
-                        src={customLogoData}
-                        alt="Logo preview"
-                        className="max-h-10 max-w-[220px] object-contain rounded-lg"
-                      />
-                    ) : (
-                      <Clock className="w-8 h-8 text-indigo-500" />
-                    )}
-                    {customAppName && (
-                      <span className="font-bold text-slate-900 dark:text-white text-base">
-                        {customAppName}
-                      </span>
-                    )}
+                {/* Live Preview Panel with Light & Dark comparisons */}
+                <div className="space-y-4">
+                  <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
+                    <span className="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold mb-2 block">
+                      ☀️ Light Mode Preview
+                    </span>
+                    <div className="p-3 bg-white border border-slate-200 rounded-xl w-full min-h-[64px] flex items-center justify-center gap-2 shadow-sm">
+                      {customLogoType === 'Svg' && customLogoData ? (
+                        <div
+                          className="h-7 max-w-[140px] flex items-center justify-center [&>svg]:h-full [&>svg]:w-auto [&>svg]:max-h-7 [&>svg]:max-w-[140px] [&>svg]:object-contain overflow-hidden"
+                          dangerouslySetInnerHTML={{ __html: customLogoData }}
+                        />
+                      ) : customLogoData ? (
+                        <img
+                          src={customLogoData}
+                          alt="Light logo preview"
+                          className="h-7 max-w-[140px] object-contain"
+                        />
+                      ) : (
+                        <Clock className="w-6 h-6 text-indigo-600" />
+                      )}
+                      {customAppName && (
+                        <span className="font-bold text-slate-900 text-sm">
+                          {customAppName}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-[11px] text-slate-500 mt-2">
-                    Format: {customLogoType} | Status: {customLogoData ? 'Custom' : 'Default'}
-                  </span>
+
+                  <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
+                    <span className="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold mb-2 block">
+                      🌙 Dark Mode Preview
+                    </span>
+                    <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl w-full min-h-[64px] flex items-center justify-center gap-2 shadow-sm">
+                      {customLogoDarkType === 'Svg' && customLogoDarkData ? (
+                        <div
+                          className="h-7 max-w-[140px] flex items-center justify-center [&>svg]:h-full [&>svg]:w-auto [&>svg]:max-h-7 [&>svg]:max-w-[140px] [&>svg]:object-contain overflow-hidden"
+                          dangerouslySetInnerHTML={{ __html: customLogoDarkData }}
+                        />
+                      ) : customLogoDarkData ? (
+                        <img
+                          src={customLogoDarkData}
+                          alt="Dark logo preview"
+                          className="h-7 max-w-[140px] object-contain"
+                        />
+                      ) : customLogoType === 'Svg' && customLogoData ? (
+                        <div
+                          className="h-7 max-w-[140px] flex items-center justify-center [&>svg]:h-full [&>svg]:w-auto [&>svg]:max-h-7 [&>svg]:max-w-[140px] [&>svg]:object-contain overflow-hidden"
+                          dangerouslySetInnerHTML={{ __html: customLogoData }}
+                        />
+                      ) : customLogoData ? (
+                        <img
+                          src={customLogoData}
+                          alt="Fallback logo preview"
+                          className="h-7 max-w-[140px] object-contain"
+                        />
+                      ) : (
+                        <Clock className="w-6 h-6 text-indigo-400" />
+                      )}
+                      {customAppName && (
+                        <span className="font-bold text-white text-sm">
+                          {customAppName}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

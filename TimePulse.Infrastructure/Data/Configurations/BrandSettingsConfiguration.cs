@@ -23,6 +23,13 @@ public class BrandSettingsConfiguration : IEntityTypeConfiguration<BrandSettings
             .IsRequired()
             .HasMaxLength(50);
 
+        builder.Property(b => b.LogoDarkData)
+            .HasColumnType("text");
+
+        builder.Property(b => b.LogoDarkType)
+            .IsRequired()
+            .HasMaxLength(50);
+
         builder.Property(b => b.UpdatedAtUtc)
             .IsRequired();
 

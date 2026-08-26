@@ -4,6 +4,8 @@ export interface BrandSettings {
   appName: string | null
   logoData: string | null
   logoType: string
+  logoDarkData: string | null
+  logoDarkType: string
   isCustom: boolean
   updatedAtUtc?: string
 }
@@ -12,6 +14,8 @@ export interface UpdateBrandPayload {
   appName: string | null
   logoData: string | null
   logoType: string
+  logoDarkData?: string | null
+  logoDarkType?: string
 }
 
 export const brandingApi = {

@@ -7,6 +7,7 @@ interface LogoProps {
   showText?: boolean
   textClassName?: string
   isSquare?: boolean
+  forceTheme?: 'light' | 'dark'
 }
 
 export function Logo({
@@ -15,8 +16,22 @@ export function Logo({
   showText = false,
   textClassName = '',
   isSquare = false,
+  forceTheme,
 }: LogoProps) {
-  const { appName, logoData, logoType } = useAppSelector((state) => state.branding)
+  const { appName, logoData, logoType, logoDarkData, logoDarkType } = useAppSelector((state) => state.branding)
+  const themeMode = useAppSelector((state) => state.theme.mode)
+
+  const isDarkMode =
+    forceTheme === 'dark'
+      ? true
+      : forceTheme === 'light'
+      ? false
+      : themeMode === 'dark' ||
+        (themeMode === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+
+  // Select appropriate logo for the active theme
+  const activeLogoData = isDarkMode && logoDarkData ? logoDarkData : logoData
+  const activeLogoType = isDarkMode && logoDarkData ? logoDarkType : logoType
 
   const defaultSquareClasses = {
     sm: { box: 'w-7 h-7 rounded-lg', icon: 'w-3.5 h-3.5', text: 'text-sm font-bold' },
@@ -36,12 +51,12 @@ export function Logo({
 
   const renderLogoGraphic = () => {
     // 1. Custom SVG
-    if (logoType === 'Svg' && logoData) {
-      if (logoData.startsWith('<svg') || logoData.includes('</svg>')) {
+    if (activeLogoType === 'Svg' && activeLogoData) {
+      if (activeLogoData.startsWith('<svg') || activeLogoData.includes('</svg>')) {
         return (
           <div
             className={`inline-flex items-center justify-start ${customSizingClasses} [&>svg]:h-full [&>svg]:w-auto [&>svg]:max-h-full [&>svg]:max-w-full [&>svg]:object-contain overflow-hidden ${className}`}
-            dangerouslySetInnerHTML={{ __html: logoData }}
+            dangerouslySetInnerHTML={{ __html: activeLogoData }}
           />
         )
       }
@@ -49,7 +64,7 @@ export function Logo({
       // If SVG is a data-url or regular url
       return (
         <img
-          src={logoData}
+          src={activeLogoData}
           alt={altText}
           className={`${customSizingClasses} object-contain ${className}`}
         />
@@ -57,10 +72,10 @@ export function Logo({
     }
 
     // 2. Custom Image (PNG / JPG / WebP / Data URL / Web URL)
-    if ((logoType === 'Image' || logoType === 'Url') && logoData) {
+    if ((activeLogoType === 'Image' || activeLogoType === 'Url') && activeLogoData) {
       return (
         <img
-          src={logoData}
+          src={activeLogoData}
           alt={altText}
           className={`${customSizingClasses} object-contain ${className}`}
         />

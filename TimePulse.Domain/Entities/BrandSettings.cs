@@ -13,9 +13,11 @@ public class BrandSettings : AggregateRoot<Guid>
     public string? AppName { get; private set; } = DefaultAppName;
     public string? LogoData { get; private set; }
     public string LogoType { get; private set; } = TypeDefault;
+    public string? LogoDarkData { get; private set; }
+    public string LogoDarkType { get; private set; } = TypeDefault;
     public DateTime UpdatedAtUtc { get; private set; }
 
-    public bool IsCustom => LogoType != TypeDefault || AppName != DefaultAppName;
+    public bool IsCustom => LogoType != TypeDefault || LogoDarkType != TypeDefault || AppName != DefaultAppName;
 
     private BrandSettings() { } // EF Core
 
@@ -27,15 +29,19 @@ public class BrandSettings : AggregateRoot<Guid>
             AppName = DefaultAppName,
             LogoData = null,
             LogoType = TypeDefault,
+            LogoDarkData = null,
+            LogoDarkType = TypeDefault,
             UpdatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
         };
     }
 
-    public void Update(string? appName, string? logoData, string logoType)
+    public void Update(string? appName, string? logoData, string logoType, string? logoDarkData, string logoDarkType)
     {
         AppName = string.IsNullOrWhiteSpace(appName) ? null : appName.Trim();
         LogoData = string.IsNullOrWhiteSpace(logoData) ? null : logoData.Trim();
         LogoType = string.IsNullOrWhiteSpace(logoData) ? TypeDefault : logoType;
+        LogoDarkData = string.IsNullOrWhiteSpace(logoDarkData) ? null : logoDarkData.Trim();
+        LogoDarkType = string.IsNullOrWhiteSpace(logoDarkData) ? TypeDefault : logoDarkType;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
@@ -44,6 +50,8 @@ public class BrandSettings : AggregateRoot<Guid>
         AppName = DefaultAppName;
         LogoData = null;
         LogoType = TypeDefault;
+        LogoDarkData = null;
+        LogoDarkType = TypeDefault;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 }
