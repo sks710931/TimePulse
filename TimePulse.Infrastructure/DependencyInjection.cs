@@ -6,6 +6,7 @@ using TimePulse.Domain.Repositories;
 using TimePulse.Infrastructure.Auth;
 using TimePulse.Infrastructure.Data;
 using TimePulse.Infrastructure.Repositories;
+using TimePulse.Infrastructure.Services;
 
 namespace TimePulse.Infrastructure;
 
@@ -42,9 +43,10 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
         services.AddScoped<IUserRepository, UserRepository>();
 
-        // Auth Services
+        // Auth & User Services
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserService, UserService>();
 
         return services;
     }

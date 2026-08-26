@@ -1,4 +1,6 @@
 using TimePulse.Domain.Common;
+using TimePulse.Domain.Constants;
+using TimePulse.Domain.Exceptions;
 
 namespace TimePulse.Domain.Entities;
 
@@ -9,18 +11,21 @@ public class User : AggregateRoot<Guid>
     public string FullName { get; private set; } = string.Empty;
     public DateTime CreatedAtUtc { get; private set; }
 
+    private readonly List<UserRole> _roles = [];
+    public IReadOnlyCollection<UserRole> Roles => _roles.AsReadOnly();
+
     private readonly List<RefreshToken> _refreshTokens = [];
     public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
 
     private User() { } // EF Core
 
-    public static User Create(string email, string passwordHash, string fullName)
+    public static User Create(string email, string passwordHash, string fullName, string defaultRole = Constants.Roles.Admin)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(email);
         ArgumentException.ThrowIfNullOrWhiteSpace(passwordHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(fullName);
 
-        return new User
+        var user = new User
         {
             Id = Guid.NewGuid(),
             Email = email.ToLowerInvariant(),
@@ -28,6 +33,38 @@ public class User : AggregateRoot<Guid>
             FullName = fullName,
             CreatedAtUtc = DateTime.UtcNow
         };
+
+        user.AddRole(defaultRole);
+
+        return user;
+    }
+
+    public void AddRole(string role)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(role);
+
+        if (!Constants.Roles.IsValid(role))
+        {
+            throw new DomainException($"Invalid role: '{role}'. Allowed roles are: {string.Join(", ", Constants.Roles.All)}");
+        }
+
+        var normalizedRole = Constants.Roles.All.First(r => r.Equals(role, StringComparison.OrdinalIgnoreCase));
+
+        if (!_roles.Any(r => r.Role.Equals(normalizedRole, StringComparison.OrdinalIgnoreCase)))
+        {
+            _roles.Add(UserRole.Create(Id, normalizedRole));
+        }
+    }
+
+    public void RemoveRole(string role)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(role);
+        _roles.RemoveAll(r => r.Role.Equals(role, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public bool HasRole(string role)
+    {
+        return _roles.Any(r => r.Role.Equals(role, StringComparison.OrdinalIgnoreCase));
     }
 
     public void AddRefreshToken(RefreshToken refreshToken)

@@ -14,9 +14,17 @@ public class UserRepository : IUserRepository
         _context = context;
     }
 
+    public async Task<User?> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .Include(u => u.Roles)
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+    }
+
     public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return await _context.Users
+            .Include(u => u.Roles)
             .Include(u => u.RefreshTokens)
             .FirstOrDefaultAsync(u => u.Email == email.ToLowerInvariant(), cancellationToken);
     }
@@ -24,8 +32,16 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByIdWithRefreshTokensAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.Users
+            .Include(u => u.Roles)
             .Include(u => u.RefreshTokens)
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<User>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .Include(u => u.Roles)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)

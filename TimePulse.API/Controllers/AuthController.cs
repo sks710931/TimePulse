@@ -94,7 +94,8 @@ public class AuthController : ControllerBase
         {
             id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value,
             email = User.FindFirst(ClaimTypes.Email)?.Value,
-            name = User.FindFirst(ClaimTypes.Name)?.Value
+            name = User.FindFirst(ClaimTypes.Name)?.Value,
+            roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray()
         });
     }
 
