@@ -7,7 +7,6 @@ import { OverviewTab } from '../components/dashboard/OverviewTab'
 import { TimeTrackerTab } from '../components/dashboard/TimeTrackerTab'
 import { UserManagementTab } from '../components/dashboard/UserManagementTab'
 import { WhitelabelingTab } from '../components/dashboard/WhitelabelingTab'
-import { ReduxDemoTab } from '../components/dashboard/ReduxDemoTab'
 import type { UserItem } from '../components/dashboard/UserTable'
 
 export function DashboardPage() {
@@ -60,7 +59,6 @@ export function DashboardPage() {
     timetracker: 'Time Tracker',
     users: 'User Management',
     branding: 'Whitelabeling & Branding',
-    redux: 'Redux Toolkit Demo',
   }
 
   return (
@@ -108,8 +106,6 @@ export function DashboardPage() {
           )}
 
           {activeTab === 'branding' && isAdmin && <WhitelabelingTab />}
-
-          {activeTab === 'redux' && <ReduxDemoTab />}
         </main>
       </div>
     </div>

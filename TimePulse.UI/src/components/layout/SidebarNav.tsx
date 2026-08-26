@@ -2,12 +2,11 @@ import {
   LayoutDashboard,
   Users,
   Palette,
-  Sliders,
   Clock,
   type LucideIcon,
 } from 'lucide-react'
 
-export type TabId = 'overview' | 'timetracker' | 'users' | 'branding' | 'redux'
+export type TabId = 'overview' | 'timetracker' | 'users' | 'branding'
 
 interface NavItemConfig {
   id: TabId
@@ -36,7 +35,6 @@ export function SidebarNav({
     { id: 'timetracker', label: 'Time Tracker', icon: Clock },
     { id: 'users', label: 'User Management', icon: Users, adminOnly: true },
     { id: 'branding', label: 'Whitelabeling', icon: Palette, adminOnly: true },
-    { id: 'redux', label: 'Redux Demo', icon: Sliders },
   ]
 
   const handleTabClick = (tabId: TabId) => {
