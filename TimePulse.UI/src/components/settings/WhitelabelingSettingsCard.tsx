@@ -8,6 +8,7 @@ import {
 } from '../../store/slices/brandingSlice'
 import { LogoUploadCard } from './LogoUploadCard'
 import { BrandingPreviewCard } from './BrandingPreviewCard'
+import { ColorPickerInput } from './ColorPickerInput'
 import { Alert } from '../common/Alert'
 import { Palette, Sparkles, RefreshCw, CheckCircle2, RotateCcw } from 'lucide-react'
 
@@ -20,6 +21,8 @@ export function WhitelabelingSettingsCard() {
   const [customLogoType, setCustomLogoType] = useState<string>(branding.logoType)
   const [customLogoDarkData, setCustomLogoDarkData] = useState<string | null>(branding.logoDarkData)
   const [customLogoDarkType, setCustomLogoDarkType] = useState<string>(branding.logoDarkType)
+  const [customPrimaryColorLight, setCustomPrimaryColorLight] = useState<string | null>(branding.primaryColorLight)
+  const [customPrimaryColorDark, setCustomPrimaryColorDark] = useState<string | null>(branding.primaryColorDark)
   const [uploadFileNameLight, setUploadFileNameLight] = useState<string>('')
   const [uploadFileNameDark, setUploadFileNameDark] = useState<string>('')
 
@@ -29,7 +32,17 @@ export function WhitelabelingSettingsCard() {
     setCustomLogoType(branding.logoType)
     setCustomLogoDarkData(branding.logoDarkData)
     setCustomLogoDarkType(branding.logoDarkType)
-  }, [branding.appName, branding.logoData, branding.logoType, branding.logoDarkData, branding.logoDarkType])
+    setCustomPrimaryColorLight(branding.primaryColorLight)
+    setCustomPrimaryColorDark(branding.primaryColorDark)
+  }, [
+    branding.appName,
+    branding.logoData,
+    branding.logoType,
+    branding.logoDarkData,
+    branding.logoDarkType,
+    branding.primaryColorLight,
+    branding.primaryColorDark,
+  ])
 
   const handleLightFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -82,6 +95,8 @@ export function WhitelabelingSettingsCard() {
         logoType: customLogoType,
         logoDarkData: customLogoDarkData,
         logoDarkType: customLogoDarkType,
+        primaryColorLight: customPrimaryColorLight,
+        primaryColorDark: customPrimaryColorDark,
       })
     )
   }
@@ -90,6 +105,8 @@ export function WhitelabelingSettingsCard() {
     dispatch(clearBrandingMessages())
     setUploadFileNameLight('')
     setUploadFileNameDark('')
+    setCustomPrimaryColorLight(null)
+    setCustomPrimaryColorDark(null)
     await dispatch(resetBranding())
   }
 
@@ -103,7 +120,7 @@ export function WhitelabelingSettingsCard() {
               Whitelabeling & Custom Branding
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Customize company name and logos across light/dark themes.
+              Customize company name, logos, and primary accent colors across light and dark themes.
             </p>
           </div>
         </div>
@@ -124,7 +141,8 @@ export function WhitelabelingSettingsCard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Settings Form */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-5">
+          {/* Application Name */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
               Application Name (Optional - default is TimePulse)
@@ -138,41 +156,70 @@ export function WhitelabelingSettingsCard() {
             />
           </div>
 
-          {/* Dual Logo Configuration (Light Mode & Dark Mode) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            <LogoUploadCard
-              title="☀️ Light Mode Logo"
-              themeType="light"
-              description="Used on light backgrounds (Login, Sidebar, Headers)."
-              logoData={customLogoData}
-              logoType={customLogoType}
-              appName={customAppName}
-              fileName={uploadFileNameLight}
-              onFileUpload={handleLightFileUpload}
-              onClear={() => {
-                setCustomLogoData(null)
-                setCustomLogoType('Default')
-                setUploadFileNameLight('')
-              }}
-            />
+          {/* Dual Primary Color Configuration (Light & Dark) */}
+          <div className="space-y-3">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Primary Theme Colors
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ColorPickerInput
+                label="☀️ Light Mode Primary Color"
+                description="Primary color used on light background themes."
+                value={customPrimaryColorLight}
+                defaultColor="#4f46e5"
+                onChange={setCustomPrimaryColorLight}
+              />
 
-            <LogoUploadCard
-              title="🌙 Dark Mode Logo"
-              themeType="dark"
-              description="Used on dark backgrounds. Falls back to Light Logo if omitted."
-              logoData={customLogoDarkData}
-              logoType={customLogoDarkType}
-              fallbackLogoData={customLogoData}
-              fallbackLogoType={customLogoType}
-              appName={customAppName}
-              fileName={uploadFileNameDark}
-              onFileUpload={handleDarkFileUpload}
-              onClear={() => {
-                setCustomLogoDarkData(null)
-                setCustomLogoDarkType('Default')
-                setUploadFileNameDark('')
-              }}
-            />
+              <ColorPickerInput
+                label="🌙 Dark Mode Primary Color"
+                description="Primary color used on dark background themes."
+                value={customPrimaryColorDark}
+                defaultColor="#6366f1"
+                onChange={setCustomPrimaryColorDark}
+              />
+            </div>
+          </div>
+
+          {/* Dual Logo Configuration (Light Mode & Dark Mode) */}
+          <div className="space-y-3">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Brand Logos
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <LogoUploadCard
+                title="☀️ Light Mode Logo"
+                themeType="light"
+                description="Used on light backgrounds (Login, Sidebar, Headers)."
+                logoData={customLogoData}
+                logoType={customLogoType}
+                appName={customAppName}
+                fileName={uploadFileNameLight}
+                onFileUpload={handleLightFileUpload}
+                onClear={() => {
+                  setCustomLogoData(null)
+                  setCustomLogoType('Default')
+                  setUploadFileNameLight('')
+                }}
+              />
+
+              <LogoUploadCard
+                title="🌙 Dark Mode Logo"
+                themeType="dark"
+                description="Used on dark backgrounds. Falls back to Light Logo if omitted."
+                logoData={customLogoDarkData}
+                logoType={customLogoDarkType}
+                fallbackLogoData={customLogoData}
+                fallbackLogoType={customLogoType}
+                appName={customAppName}
+                fileName={uploadFileNameDark}
+                onFileUpload={handleDarkFileUpload}
+                onClear={() => {
+                  setCustomLogoDarkData(null)
+                  setCustomLogoDarkType('Default')
+                  setUploadFileNameDark('')
+                }}
+              />
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -214,6 +261,7 @@ export function WhitelabelingSettingsCard() {
             logoData={customLogoData}
             logoType={customLogoType}
             appName={customAppName}
+            primaryColor={customPrimaryColorLight}
           />
 
           <BrandingPreviewCard
@@ -224,6 +272,7 @@ export function WhitelabelingSettingsCard() {
             fallbackLogoData={customLogoData}
             fallbackLogoType={customLogoType}
             appName={customAppName}
+            primaryColor={customPrimaryColorDark || customPrimaryColorLight}
           />
         </div>
       </div>

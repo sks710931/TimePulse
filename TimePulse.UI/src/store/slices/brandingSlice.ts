@@ -9,6 +9,8 @@ export interface BrandingState {
   logoType: string
   logoDarkData: string | null
   logoDarkType: string
+  primaryColorLight: string | null
+  primaryColorDark: string | null
   isCustom: boolean
   isLoading: boolean
   isSaving: boolean
@@ -22,6 +24,8 @@ const initialState: BrandingState = {
   logoType: 'Default',
   logoDarkData: null,
   logoDarkType: 'Default',
+  primaryColorLight: null,
+  primaryColorDark: null,
   isCustom: false,
   isLoading: false,
   isSaving: false,
@@ -88,6 +92,8 @@ export const brandingSlice = createSlice({
         state.logoType = action.payload.logoType
         state.logoDarkData = action.payload.logoDarkData
         state.logoDarkType = action.payload.logoDarkType || 'Default'
+        state.primaryColorLight = action.payload.primaryColorLight || null
+        state.primaryColorDark = action.payload.primaryColorDark || null
         state.isCustom = action.payload.isCustom
       })
       .addCase(fetchBranding.rejected, (state, action) => {
@@ -109,6 +115,8 @@ export const brandingSlice = createSlice({
         state.logoType = action.payload.logoType
         state.logoDarkData = action.payload.logoDarkData
         state.logoDarkType = action.payload.logoDarkType || 'Default'
+        state.primaryColorLight = action.payload.primaryColorLight || null
+        state.primaryColorDark = action.payload.primaryColorDark || null
         state.isCustom = action.payload.isCustom
         state.successMessage = 'Branding updated successfully!'
       })
@@ -131,6 +139,8 @@ export const brandingSlice = createSlice({
         state.logoType = action.payload.logoType
         state.logoDarkData = action.payload.logoDarkData
         state.logoDarkType = action.payload.logoDarkType || 'Default'
+        state.primaryColorLight = null
+        state.primaryColorDark = null
         state.isCustom = action.payload.isCustom
         state.successMessage = 'Branding reset to default!'
       })

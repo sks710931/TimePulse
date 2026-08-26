@@ -15,9 +15,15 @@ public class BrandSettings : AggregateRoot<Guid>
     public string LogoType { get; private set; } = TypeDefault;
     public string? LogoDarkData { get; private set; }
     public string LogoDarkType { get; private set; } = TypeDefault;
+    public string? PrimaryColorLight { get; private set; }
+    public string? PrimaryColorDark { get; private set; }
     public DateTime UpdatedAtUtc { get; private set; }
 
-    public bool IsCustom => LogoType != TypeDefault || LogoDarkType != TypeDefault || AppName != DefaultAppName;
+    public bool IsCustom => LogoType != TypeDefault || 
+                            LogoDarkType != TypeDefault || 
+                            AppName != DefaultAppName ||
+                            !string.IsNullOrWhiteSpace(PrimaryColorLight) ||
+                            !string.IsNullOrWhiteSpace(PrimaryColorDark);
 
     private BrandSettings() { } // EF Core
 
@@ -31,17 +37,28 @@ public class BrandSettings : AggregateRoot<Guid>
             LogoType = TypeDefault,
             LogoDarkData = null,
             LogoDarkType = TypeDefault,
+            PrimaryColorLight = null,
+            PrimaryColorDark = null,
             UpdatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
         };
     }
 
-    public void Update(string? appName, string? logoData, string logoType, string? logoDarkData, string logoDarkType)
+    public void Update(
+        string? appName,
+        string? logoData,
+        string logoType,
+        string? logoDarkData,
+        string logoDarkType,
+        string? primaryColorLight = null,
+        string? primaryColorDark = null)
     {
         AppName = string.IsNullOrWhiteSpace(appName) ? null : appName.Trim();
         LogoData = string.IsNullOrWhiteSpace(logoData) ? null : logoData.Trim();
         LogoType = string.IsNullOrWhiteSpace(logoData) ? TypeDefault : logoType;
         LogoDarkData = string.IsNullOrWhiteSpace(logoDarkData) ? null : logoDarkData.Trim();
         LogoDarkType = string.IsNullOrWhiteSpace(logoDarkData) ? TypeDefault : logoDarkType;
+        PrimaryColorLight = string.IsNullOrWhiteSpace(primaryColorLight) ? null : primaryColorLight.Trim();
+        PrimaryColorDark = string.IsNullOrWhiteSpace(primaryColorDark) ? null : primaryColorDark.Trim();
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
@@ -52,6 +69,8 @@ public class BrandSettings : AggregateRoot<Guid>
         LogoType = TypeDefault;
         LogoDarkData = null;
         LogoDarkType = TypeDefault;
+        PrimaryColorLight = null;
+        PrimaryColorDark = null;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 }

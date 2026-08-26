@@ -26,6 +26,23 @@ export function applyThemeToDom(mode: ThemeMode) {
   }
 }
 
+export function applyBrandColorsToDom(
+  primaryLight: string | null,
+  primaryDark: string | null,
+  themeMode: ThemeMode
+) {
+  const root = document.documentElement
+  const isDark =
+    themeMode === 'dark' ||
+    (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+
+  const activeColor = isDark
+    ? primaryDark || primaryLight || '#6366f1'
+    : primaryLight || '#4f46e5'
+
+  root.style.setProperty('--color-primary', activeColor)
+}
+
 const getInitialTheme = (): ThemeMode => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY) as ThemeMode | null

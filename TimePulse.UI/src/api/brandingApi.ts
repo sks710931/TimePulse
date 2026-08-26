@@ -6,6 +6,8 @@ export interface BrandSettings {
   logoType: string
   logoDarkData: string | null
   logoDarkType: string
+  primaryColorLight: string | null
+  primaryColorDark: string | null
   isCustom: boolean
   updatedAtUtc?: string
 }
@@ -16,6 +18,8 @@ export interface UpdateBrandPayload {
   logoType: string
   logoDarkData?: string | null
   logoDarkType?: string
+  primaryColorLight?: string | null
+  primaryColorDark?: string | null
 }
 
 export const brandingApi = {

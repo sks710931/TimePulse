@@ -27,7 +27,9 @@ public class BrandingService : IBrandingService
             request.LogoData,
             request.LogoType,
             request.LogoDarkData,
-            request.LogoDarkType);
+            request.LogoDarkType,
+            request.PrimaryColorLight,
+            request.PrimaryColorDark);
 
         await _repository.UpdateSettingsAsync(settings, cancellationToken);
         return MapToDto(settings);
@@ -49,6 +51,8 @@ public class BrandingService : IBrandingService
             settings.LogoType,
             settings.LogoDarkData,
             settings.LogoDarkType,
+            settings.PrimaryColorLight,
+            settings.PrimaryColorDark,
             settings.IsCustom,
             settings.UpdatedAtUtc);
     }

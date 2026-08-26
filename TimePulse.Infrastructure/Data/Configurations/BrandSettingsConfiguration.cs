@@ -30,6 +30,14 @@ public class BrandSettingsConfiguration : IEntityTypeConfiguration<BrandSettings
             .IsRequired()
             .HasMaxLength(50);
 
+        builder.Property(b => b.PrimaryColorLight)
+            .IsRequired(false)
+            .HasMaxLength(30);
+
+        builder.Property(b => b.PrimaryColorDark)
+            .IsRequired(false)
+            .HasMaxLength(30);
+
         builder.Property(b => b.UpdatedAtUtc)
             .IsRequired();
 

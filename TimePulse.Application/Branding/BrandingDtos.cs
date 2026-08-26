@@ -6,6 +6,8 @@ public record BrandSettingsDto(
     string LogoType,
     string? LogoDarkData,
     string LogoDarkType,
+    string? PrimaryColorLight,
+    string? PrimaryColorDark,
     bool IsCustom,
     DateTime UpdatedAtUtc);
 
@@ -14,4 +16,6 @@ public record UpdateBrandSettingsRequest(
     string? LogoData,
     string LogoType,
     string? LogoDarkData = null,
-    string LogoDarkType = "Default");
+    string LogoDarkType = "Default",
+    string? PrimaryColorLight = null,
+    string? PrimaryColorDark = null);

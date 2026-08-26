@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from './store/hooks'
 import { checkAuth } from './store/slices/authSlice'
 import { fetchBranding } from './store/slices/brandingSlice'
-import { applyThemeToDom } from './store/slices/themeSlice'
+import { applyThemeToDom, applyBrandColorsToDom } from './store/slices/themeSlice'
 import { ProtectedRoute } from './components/common/ProtectedRoute'
 import { PublicOnlyRoute } from './components/common/PublicOnlyRoute'
 import { LoginPage } from './pages/LoginPage'
@@ -14,7 +14,7 @@ import { Loader2 } from 'lucide-react'
 function App() {
   const dispatch = useAppDispatch()
   const { isAuthenticated, isCheckingAuth } = useAppSelector((state) => state.auth)
-  const { appName } = useAppSelector((state) => state.branding)
+  const { appName, primaryColorLight, primaryColorDark } = useAppSelector((state) => state.branding)
   const themeMode = useAppSelector((state) => state.theme.mode)
 
   useEffect(() => {
@@ -30,15 +30,19 @@ function App() {
 
   useEffect(() => {
     applyThemeToDom(themeMode)
+    applyBrandColorsToDom(primaryColorLight, primaryColorDark, themeMode)
 
     if (themeMode === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-      const handleChange = () => applyThemeToDom('system')
+      const handleChange = () => {
+        applyThemeToDom('system')
+        applyBrandColorsToDom(primaryColorLight, primaryColorDark, 'system')
+      }
 
       mediaQuery.addEventListener('change', handleChange)
       return () => mediaQuery.removeEventListener('change', handleChange)
     }
-  }, [themeMode])
+  }, [themeMode, primaryColorLight, primaryColorDark])
 
   return (
     <BrowserRouter>
