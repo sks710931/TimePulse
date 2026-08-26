@@ -19,17 +19,17 @@ export function Logo({
   const { appName, logoData, logoType } = useAppSelector((state) => state.branding)
 
   const defaultSquareClasses = {
-    sm: { box: 'w-8 h-8 rounded-lg', icon: 'w-4 h-4', text: 'text-sm font-bold' },
-    md: { box: 'w-10 h-10 rounded-xl', icon: 'w-5 h-5', text: 'text-lg font-bold' },
-    lg: { box: 'w-14 h-14 rounded-2xl', icon: 'w-7 h-7', text: 'text-2xl font-bold' },
-    xl: { box: 'w-20 h-20 rounded-3xl', icon: 'w-10 h-10', text: 'text-3xl font-extrabold' },
+    sm: { box: 'w-7 h-7 rounded-lg', icon: 'w-3.5 h-3.5', text: 'text-sm font-bold' },
+    md: { box: 'w-8 h-8 rounded-xl', icon: 'w-4 h-4', text: 'text-base font-bold' },
+    lg: { box: 'w-12 h-12 rounded-2xl', icon: 'w-6 h-6', text: 'text-xl font-bold' },
+    xl: { box: 'w-16 h-16 rounded-3xl', icon: 'w-8 h-8', text: 'text-2xl font-extrabold' },
   }[size]
 
   const customSizingClasses = {
-    sm: isSquare ? 'w-8 h-8 max-w-full max-h-full' : 'max-h-8 max-w-[160px] w-auto h-auto',
-    md: isSquare ? 'w-10 h-10 max-w-full max-h-full' : 'max-h-10 max-w-[200px] w-auto h-auto',
-    lg: isSquare ? 'w-14 h-14 max-w-full max-h-full' : 'max-h-14 max-w-[260px] w-auto h-auto',
-    xl: isSquare ? 'w-20 h-20 max-w-full max-h-full' : 'max-h-20 max-w-[320px] w-auto h-auto',
+    sm: isSquare ? 'w-7 h-7 max-w-full max-h-full' : 'h-6 max-w-[120px] w-auto',
+    md: isSquare ? 'w-8 h-8 max-w-full max-h-full' : 'h-7 max-w-[130px] w-auto',
+    lg: isSquare ? 'w-12 h-12 max-w-full max-h-full' : 'h-10 max-w-[180px] w-auto',
+    xl: isSquare ? 'w-16 h-16 max-w-full max-h-full' : 'h-12 max-w-[220px] w-auto',
   }[size]
 
   const altText = appName || 'Brand Logo'
@@ -40,7 +40,7 @@ export function Logo({
       if (logoData.startsWith('<svg') || logoData.includes('</svg>')) {
         return (
           <div
-            className={`inline-flex items-center justify-center ${customSizingClasses} [&>svg]:w-auto [&>svg]:h-full [&>svg]:max-h-full [&>svg]:max-w-full [&>svg]:object-contain overflow-visible ${className}`}
+            className={`inline-flex items-center justify-start ${customSizingClasses} [&>svg]:h-full [&>svg]:w-auto [&>svg]:max-h-full [&>svg]:max-w-full [&>svg]:object-contain overflow-hidden ${className}`}
             dangerouslySetInnerHTML={{ __html: logoData }}
           />
         )
@@ -79,7 +79,7 @@ export function Logo({
 
   if (showText && appName) {
     return (
-      <div className="inline-flex items-center gap-3">
+      <div className="inline-flex items-center gap-2.5">
         {renderLogoGraphic()}
         <span className={`text-slate-900 dark:text-white tracking-tight ${defaultSquareClasses.text} ${textClassName}`}>
           {appName}
