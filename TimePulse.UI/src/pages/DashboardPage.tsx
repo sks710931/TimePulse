@@ -7,6 +7,7 @@ import { OverviewTab } from '../components/dashboard/OverviewTab'
 import { TimeTrackerTab } from '../components/dashboard/TimeTrackerTab'
 import { UserManagementTab } from '../components/dashboard/UserManagementTab'
 import { WhitelabelingTab } from '../components/dashboard/WhitelabelingTab'
+import { SettingsTab } from '../components/settings/SettingsTab'
 import type { UserItem } from '../components/dashboard/UserTable'
 
 export function DashboardPage() {
@@ -59,6 +60,7 @@ export function DashboardPage() {
     timetracker: 'Time Tracker',
     users: 'User Management',
     branding: 'Whitelabeling & Branding',
+    settings: 'Account & Application Settings',
   }
 
   return (
@@ -106,6 +108,8 @@ export function DashboardPage() {
           )}
 
           {activeTab === 'branding' && isAdmin && <WhitelabelingTab />}
+
+          {activeTab === 'settings' && <SettingsTab user={user} />}
         </main>
       </div>
     </div>

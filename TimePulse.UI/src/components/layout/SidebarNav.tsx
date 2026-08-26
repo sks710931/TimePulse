@@ -3,10 +3,11 @@ import {
   Users,
   Palette,
   Clock,
+  Settings,
   type LucideIcon,
 } from 'lucide-react'
 
-export type TabId = 'overview' | 'timetracker' | 'users' | 'branding'
+export type TabId = 'overview' | 'timetracker' | 'users' | 'branding' | 'settings'
 
 interface NavItemConfig {
   id: TabId
@@ -35,6 +36,7 @@ export function SidebarNav({
     { id: 'timetracker', label: 'Time Tracker', icon: Clock },
     { id: 'users', label: 'User Management', icon: Users, adminOnly: true },
     { id: 'branding', label: 'Whitelabeling', icon: Palette, adminOnly: true },
+    { id: 'settings', label: 'Settings', icon: Settings },
   ]
 
   const handleTabClick = (tabId: TabId) => {
