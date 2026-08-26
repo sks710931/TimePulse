@@ -11,7 +11,7 @@ import { BrandingPreviewCard } from './BrandingPreviewCard'
 import { Alert } from '../common/Alert'
 import { Palette, Sparkles, RefreshCw, CheckCircle2, RotateCcw } from 'lucide-react'
 
-export function WhitelabelingTab() {
+export function WhitelabelingSettingsCard() {
   const dispatch = useAppDispatch()
   const branding = useAppSelector((state) => state.branding)
 
@@ -94,36 +94,37 @@ export function WhitelabelingTab() {
   }
 
   return (
-    <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-lg shadow-slate-200/40 dark:shadow-none transition-colors duration-200">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Palette className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-            Whitelabeling & Custom Branding
-          </h2>
+          <div>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              Whitelabeling & Custom Branding
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Customize company name and logos across light/dark themes.
+            </p>
+          </div>
         </div>
         {branding.isCustom ? (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30 self-start sm:self-auto">
             <Sparkles className="w-3 h-3" />
             Custom Branding Active
           </span>
         ) : (
-          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-            Default TimePulse Branding
+          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 self-start sm:self-auto">
+            Default Branding
           </span>
         )}
       </div>
 
-      <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
-        Customize the application name and upload your company logo (supports <strong>SVG vector</strong>, <strong>PNG</strong>, and <strong>WebP/JPG images</strong>). Changes will apply globally across Login, Register, Sidebar, and Dashboard.
-      </p>
+      {branding.error && <Alert type="error" message={branding.error} />}
+      {branding.successMessage && <Alert type="success" message={branding.successMessage} />}
 
-      {branding.error && <Alert type="error" message={branding.error} className="mb-4" />}
-      {branding.successMessage && <Alert type="success" message={branding.successMessage} className="mb-4" />}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Settings Form */}
-        <div className="md:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
               Application Name (Optional - default is TimePulse)
@@ -142,7 +143,7 @@ export function WhitelabelingTab() {
             <LogoUploadCard
               title="☀️ Light Mode Logo"
               themeType="light"
-              description="Used on light theme backgrounds (Login, Sidebar, Headers)."
+              description="Used on light backgrounds (Login, Sidebar, Headers)."
               logoData={customLogoData}
               logoType={customLogoType}
               appName={customAppName}
@@ -158,7 +159,7 @@ export function WhitelabelingTab() {
             <LogoUploadCard
               title="🌙 Dark Mode Logo"
               themeType="dark"
-              description="Used on dark theme backgrounds. Falls back to Light Logo if omitted."
+              description="Used on dark backgrounds. Falls back to Light Logo if omitted."
               logoData={customLogoDarkData}
               logoType={customLogoDarkType}
               fallbackLogoData={customLogoData}

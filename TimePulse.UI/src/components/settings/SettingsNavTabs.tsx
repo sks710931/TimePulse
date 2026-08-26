@@ -1,22 +1,25 @@
-import { User, Palette, Bell, Shield, type LucideIcon } from 'lucide-react'
+import { User, Palette, Sparkles, Bell, Shield, type LucideIcon } from 'lucide-react'
 
-export type SettingsTabId = 'profile' | 'appearance' | 'notifications' | 'security'
+export type SettingsTabId = 'profile' | 'appearance' | 'whitelabeling' | 'notifications' | 'security'
 
 interface SettingsNavTabsProps {
   activeTab: SettingsTabId
   onSelectTab: (tab: SettingsTabId) => void
+  isAdmin: boolean
 }
 
 interface TabItem {
   id: SettingsTabId
   label: string
   icon: LucideIcon
+  adminOnly?: boolean
 }
 
-export function SettingsNavTabs({ activeTab, onSelectTab }: SettingsNavTabsProps) {
+export function SettingsNavTabs({ activeTab, onSelectTab, isAdmin }: SettingsNavTabsProps) {
   const tabs: TabItem[] = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'appearance', label: 'Appearance', icon: Palette },
+    { id: 'whitelabeling', label: 'Whitelabeling', icon: Sparkles, adminOnly: true },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'security', label: 'Security', icon: Shield },
   ]
@@ -24,6 +27,7 @@ export function SettingsNavTabs({ activeTab, onSelectTab }: SettingsNavTabsProps
   return (
     <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto">
       {tabs.map((t) => {
+        if (t.adminOnly && !isAdmin) return null
         const isActive = activeTab === t.id
         const Icon = t.icon
 
@@ -39,6 +43,11 @@ export function SettingsNavTabs({ activeTab, onSelectTab }: SettingsNavTabsProps
           >
             <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
             <span>{t.label}</span>
+            {t.adminOnly && (
+              <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-700 dark:text-indigo-300">
+                Admin
+              </span>
+            )}
           </button>
         )
       })}

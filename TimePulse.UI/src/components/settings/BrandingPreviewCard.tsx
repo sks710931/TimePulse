@@ -37,7 +37,7 @@ export function BrandingPreviewCard({
       >
         {activeType === 'Svg' && activeData ? (
           <div
-            className="h-7 max-w-[140px] flex items-center justify-center [&>svg]:h-full [&>svg]:w-auto [&>svg]:max-h-7 [&>svg]:max-w-[140px] [&>svg]:object-contain overflow-hidden"
+            className="h-7 max-w-[140px] flex items-center justify-center [&>svg]:h-full [&>svg]:max-h-7 [&>svg]:w-auto [&>svg]:max-w-[140px] [&>svg]:object-contain overflow-hidden"
             dangerouslySetInnerHTML={{ __html: activeData }}
           />
         ) : activeData ? (

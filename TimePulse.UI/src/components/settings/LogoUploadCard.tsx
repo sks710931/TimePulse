@@ -58,7 +58,7 @@ export function LogoUploadCard({
       >
         {activeType === 'Svg' && activeData ? (
           <div
-            className="h-7 max-w-[130px] flex items-center justify-center [&>svg]:h-full [&>svg]:w-auto [&>svg]:max-h-7 [&>svg]:max-w-[130px] [&>svg]:object-contain overflow-hidden"
+            className="h-7 max-w-[130px] flex items-center justify-center [&>svg]:h-full [&>svg]:max-h-7 [&>svg]:max-w-[130px] [&>svg]:object-contain overflow-hidden"
             dangerouslySetInnerHTML={{ __html: activeData }}
           />
         ) : activeData ? (
