@@ -9,8 +9,6 @@ import {
   CloudSun,
   Sliders,
   LogOut,
-  ChevronLeft,
-  ChevronRight,
   Shield,
   X,
   Clock,
@@ -22,7 +20,6 @@ interface SidebarProps {
   activeTab: TabId
   onSelectTab: (tab: TabId) => void
   isCollapsed: boolean
-  onToggleCollapse: () => void
   isMobileOpen: boolean
   onCloseMobile: () => void
 }
@@ -31,7 +28,6 @@ export function Sidebar({
   activeTab,
   onSelectTab,
   isCollapsed,
-  onToggleCollapse,
   isMobileOpen,
   onCloseMobile,
 }: SidebarProps) {
@@ -90,36 +86,25 @@ export function Sidebar({
           isMobileOpen ? 'translate-x-0 w-72 shadow-2xl' : '-translate-x-full lg:translate-x-0'
         } ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}`}
       >
-        {/* Top Header: Logo & Collapse Button */}
+        {/* Top Header: Clean Brand Area (No chevron inside) */}
         <div className="h-16 px-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-3 overflow-hidden">
-            {isCollapsed ? (
-              <div className="mx-auto" title={branding.appName || 'TimePulse'}>
-                <Logo size="sm" showText={false} />
-              </div>
-            ) : (
-              <div className="flex items-center gap-2.5 truncate">
-                <Logo size="sm" showText={false} />
-                <span className="font-bold text-base text-slate-900 dark:text-white truncate">
-                  {branding.appName || 'TimePulse'}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Desktop Collapse Toggle */}
-          <button
-            onClick={onToggleCollapse}
-            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
+          {isCollapsed ? (
+            <div className="w-full flex items-center justify-center" title={branding.appName || 'TimePulse'}>
+              <Logo size="sm" showText={false} />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5 truncate flex-1">
+              <Logo size="sm" showText={false} />
+              <span className="font-bold text-base text-slate-900 dark:text-white truncate">
+                {branding.appName || 'TimePulse'}
+              </span>
+            </div>
+          )}
 
           {/* Mobile Close Button */}
           <button
             onClick={onCloseMobile}
-            className="lg:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="lg:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 ml-2"
           >
             <X className="w-5 h-5" />
           </button>

@@ -216,7 +216,6 @@ export function DashboardPage() {
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         isCollapsed={isCollapsed}
-        onToggleCollapse={handleToggleCollapse}
         isMobileOpen={isMobileOpen}
         onCloseMobile={() => setIsMobileOpen(false)}
       />
@@ -226,10 +225,17 @@ export function DashboardPage() {
         {/* Top Header */}
         <header className="sticky top-0 z-30 h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 flex items-center justify-between transition-colors duration-200">
           <div className="flex items-center gap-3">
-            {/* Mobile Hamburger Button */}
+            {/* Hamburger Button (Toggles sidebar on desktop, opens drawer on mobile) */}
             <button
-              onClick={() => setIsMobileOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              onClick={() => {
+                if (window.innerWidth < 1024) {
+                  setIsMobileOpen(true)
+                } else {
+                  handleToggleCollapse()
+                }
+              }}
+              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
             >
               <Menu className="w-5 h-5" />
             </button>
