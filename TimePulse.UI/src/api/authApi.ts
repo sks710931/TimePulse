@@ -1,6 +1,9 @@
+import { apiFetch } from './apiClient'
+
 export interface UserProfile {
   id: string
   email: string
+  fullName: string
   name: string
   roles: string[]
 }
@@ -18,11 +21,16 @@ export interface RegisterPayload {
 
 export const authApi = {
   async getMe(): Promise<UserProfile> {
-    const res = await fetch('/api/auth/me', { credentials: 'include' })
+    const res = await apiFetch('/api/auth/me')
     if (!res.ok) {
       throw new Error(`Failed to fetch profile (${res.status})`)
     }
-    return res.json()
+    const data = await res.json()
+    // Map both fullName and name for safety
+    return {
+      ...data,
+      name: data.name || data.fullName,
+    }
   },
 
   async login(payload: LoginPayload): Promise<{ message: string }> {

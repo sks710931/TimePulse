@@ -11,12 +11,14 @@ namespace TimePulse.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IConfiguration _configuration;
     private const string AccessTokenCookie = "tp_access";
     private const string RefreshTokenCookie = "tp_refresh";
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IConfiguration configuration)
     {
         _authService = authService;
+        _configuration = configuration;
     }
 
     [HttpPost("register")]
@@ -53,9 +55,9 @@ public class AuthController : ControllerBase
         var accessToken = Request.Cookies[AccessTokenCookie];
         var refreshToken = Request.Cookies[RefreshTokenCookie];
 
-        if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
+        if (string.IsNullOrEmpty(refreshToken))
         {
-            return Unauthorized(new { error = "Missing tokens." });
+            return Unauthorized(new { error = "Missing refresh token." });
         }
 
         var result = await _authService.RefreshAsync(accessToken, refreshToken, cancellationToken);
@@ -101,13 +103,15 @@ public class AuthController : ControllerBase
 
     private void SetTokenCookies(AuthResult result)
     {
+        var refreshDays = int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
+
         Response.Cookies.Append(AccessTokenCookie, result.AccessToken, new CookieOptions
         {
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.Strict,
             Path = "/",
-            MaxAge = TimeSpan.FromMinutes(1)
+            MaxAge = TimeSpan.FromDays(refreshDays)
         });
 
         Response.Cookies.Append(RefreshTokenCookie, result.RefreshToken, new CookieOptions
@@ -116,7 +120,7 @@ public class AuthController : ControllerBase
             Secure = true,
             SameSite = SameSiteMode.Strict,
             Path = "/api/auth",
-            MaxAge = TimeSpan.FromDays(7)
+            MaxAge = TimeSpan.FromDays(refreshDays)
         });
     }
 

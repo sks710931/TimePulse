@@ -37,6 +37,14 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
     }
 
+    public async Task<User?> GetByRefreshTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .Include(u => u.Roles)
+            .Include(u => u.RefreshTokens)
+            .FirstOrDefaultAsync(u => u.RefreshTokens.Any(rt => rt.TokenHash == tokenHash), cancellationToken);
+    }
+
     public async Task<IReadOnlyList<User>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Users

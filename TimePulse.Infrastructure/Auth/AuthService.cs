@@ -51,27 +51,34 @@ public class AuthService : IAuthService
         return GenerateTokens(user);
     }
 
-    public async Task<AuthResult> RefreshAsync(string accessToken, string refreshToken, CancellationToken cancellationToken = default)
+    public async Task<AuthResult> RefreshAsync(string? accessToken, string refreshToken, CancellationToken cancellationToken = default)
     {
-        var principal = _tokenService.GetPrincipalFromExpiredToken(accessToken);
-        if (principal is null)
+        var refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);
+        User? user = null;
+
+        if (!string.IsNullOrEmpty(accessToken))
         {
-            return AuthResult.Failure("Invalid access token.");
+            var principal = _tokenService.GetPrincipalFromExpiredToken(accessToken);
+            if (principal is not null)
+            {
+                var userIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (Guid.TryParse(userIdClaim, out var userId))
+                {
+                    user = await _userRepository.GetByIdWithRefreshTokensAsync(userId, cancellationToken);
+                }
+            }
         }
 
-        var userIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!Guid.TryParse(userIdClaim, out var userId))
-        {
-            return AuthResult.Failure("Invalid access token.");
-        }
-
-        var user = await _userRepository.GetByIdWithRefreshTokensAsync(userId, cancellationToken);
         if (user is null)
         {
-            return AuthResult.Failure("User not found.");
+            user = await _userRepository.GetByRefreshTokenHashAsync(refreshTokenHash, cancellationToken);
         }
 
-        var refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);
+        if (user is null)
+        {
+            return AuthResult.Failure("User not found or invalid token.");
+        }
+
         var existingToken = user.RefreshTokens
             .FirstOrDefault(rt => rt.TokenHash == refreshTokenHash);
 

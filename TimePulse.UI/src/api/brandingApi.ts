@@ -1,3 +1,5 @@
+import { apiClient } from './apiClient'
+
 export interface BrandSettings {
   appName: string | null
   logoData: string | null
@@ -14,36 +16,14 @@ export interface UpdateBrandPayload {
 
 export const brandingApi = {
   async getBranding(): Promise<BrandSettings> {
-    const res = await fetch('/api/branding')
-    if (!res.ok) {
-      throw new Error(`Failed to fetch branding settings (${res.status})`)
-    }
-    return res.json()
+    return apiClient.get<BrandSettings>('/api/branding')
   },
 
   async updateBranding(payload: UpdateBrandPayload): Promise<BrandSettings> {
-    const res = await fetch('/api/branding', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      credentials: 'include',
-    })
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      throw new Error(err.error || 'Failed to update branding settings')
-    }
-    return res.json()
+    return apiClient.put<BrandSettings>('/api/branding', payload)
   },
 
   async resetBranding(): Promise<BrandSettings> {
-    const res = await fetch('/api/branding/reset', {
-      method: 'POST',
-      credentials: 'include',
-    })
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      throw new Error(err.error || 'Failed to reset branding settings')
-    }
-    return res.json()
+    return apiClient.post<BrandSettings>('/api/branding/reset')
   },
 }

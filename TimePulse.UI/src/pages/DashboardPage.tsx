@@ -3,6 +3,7 @@ import type { ChangeEvent } from 'react'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { saveBranding, resetBranding, clearBrandingMessages } from '../store/slices/brandingSlice'
 import { increment, decrement, reset } from '../store/slices/counterSlice'
+import { apiClient } from '../api/apiClient'
 import { Sidebar } from '../components/Sidebar'
 import type { TabId } from '../components/Sidebar'
 import {
@@ -120,11 +121,7 @@ export function DashboardPage() {
     setForecastLoading(true)
     setForecastError(null)
     try {
-      const res = await fetch('/weatherforecast', { credentials: 'include' })
-      if (!res.ok) {
-        throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`)
-      }
-      const data = await res.json()
+      const data = await apiClient.get<WeatherItem[]>('/weatherforecast')
       setForecasts(data)
     } catch (err: unknown) {
       setForecastError(err instanceof Error ? err.message : 'Error loading forecast')
@@ -138,11 +135,7 @@ export function DashboardPage() {
     setUsersLoading(true)
     setUsersError(null)
     try {
-      const res = await fetch('/api/users', { credentials: 'include' })
-      if (!res.ok) {
-        throw new Error(`Failed to fetch users: ${res.status}`)
-      }
-      const data = await res.json()
+      const data = await apiClient.get<UserItem[]>('/api/users')
       setUsers(data)
     } catch (err: unknown) {
       setUsersError(err instanceof Error ? err.message : 'Error loading users')
