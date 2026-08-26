@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { loginUser, clearError } from '../store/slices/authSlice'
+import { Clock, Lock, Mail, ArrowRight, AlertCircle, Loader2 } from 'lucide-react'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
@@ -28,166 +29,92 @@ export function LoginPage() {
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>TimePulse</h1>
-          <p style={styles.subtitle}>Sign in to your account</p>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      <div className="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl p-8 shadow-2xl shadow-indigo-500/10">
+        {/* Brand Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 mb-4 shadow-inner">
+            <Clock className="w-7 h-7" />
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-white">TimePulse</h1>
+          <p className="text-sm text-slate-400 mt-1">Sign in to access your dashboard</p>
         </div>
 
-        {error && <div style={styles.errorBox}>{error}</div>}
+        {/* Error Alert */}
+        {error && (
+          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-3 text-red-400 text-sm animate-in fade-in">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.field}>
-            <label htmlFor="email" style={styles.label}>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
               Email Address
             </label>
-            <input
-              id="email"
-              type="email"
-              required
-              placeholder="user@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={styles.input}
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <Mail className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="email"
+                required
+                placeholder="user@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+                className="w-full pl-11 pr-4 py-3 bg-slate-950/60 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50"
+              />
+            </div>
           </div>
 
-          <div style={styles.field}>
-            <label htmlFor="password" style={styles.label}>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              required
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={styles.input}
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <Lock className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="password"
+                required
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                className="w-full pl-11 pr-4 py-3 bg-slate-950/60 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50"
+              />
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            style={{
-              ...styles.button,
-              opacity: isLoading ? 0.7 : 1,
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-            }}
+            className="w-full mt-2 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
-            {isLoading ? 'Signing In...' : 'Sign In'}
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Signing In...</span>
+              </>
+            ) : (
+              <>
+                <span>Sign In</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
           </button>
         </form>
 
-        <div style={styles.footer}>
-          <p style={styles.footerText}>
+        {/* Footer */}
+        <div className="mt-8 pt-6 border-t border-slate-800 text-center">
+          <p className="text-sm text-slate-400">
             Don't have an account?{' '}
-            <Link to="/register" style={styles.link}>
-              Create one (Admin)
+            <Link to="/register" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+              Create Admin Account
             </Link>
           </p>
         </div>
       </div>
     </div>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '80vh',
-    padding: '24px',
-  },
-  card: {
-    width: '100%',
-    maxWidth: '440px',
-    background: 'var(--bg)',
-    border: '1px solid var(--border)',
-    borderRadius: '16px',
-    padding: '36px',
-    boxShadow: 'var(--shadow)',
-    textAlign: 'left',
-  },
-  header: {
-    marginBottom: '24px',
-    textAlign: 'center',
-  },
-  title: {
-    margin: '0 0 8px 0',
-    fontSize: '32px',
-    fontWeight: 700,
-    letterSpacing: '-0.5px',
-  },
-  subtitle: {
-    fontSize: '15px',
-    color: 'var(--text)',
-  },
-  errorBox: {
-    background: 'rgba(239, 68, 68, 0.1)',
-    border: '1px solid rgba(239, 68, 68, 0.3)',
-    color: '#ef4444',
-    padding: '12px 16px',
-    borderRadius: '8px',
-    fontSize: '14px',
-    marginBottom: '20px',
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '18px',
-  },
-  field: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  label: {
-    fontSize: '14px',
-    fontWeight: 500,
-    color: 'var(--text-h)',
-  },
-  input: {
-    padding: '12px 14px',
-    fontSize: '15px',
-    borderRadius: '8px',
-    border: '1px solid var(--border)',
-    background: 'var(--bg)',
-    color: 'var(--text-h)',
-    outline: 'none',
-    boxSizing: 'border-box',
-    width: '100%',
-  },
-  button: {
-    marginTop: '6px',
-    padding: '12px',
-    fontSize: '16px',
-    fontWeight: 600,
-    color: '#fff',
-    background: 'var(--accent)',
-    border: 'none',
-    borderRadius: '8px',
-    transition: 'opacity 0.2s',
-  },
-  footer: {
-    marginTop: '24px',
-    textAlign: 'center',
-    borderTop: '1px solid var(--border)',
-    paddingTop: '18px',
-  },
-  footerText: {
-    fontSize: '14px',
-    color: 'var(--text)',
-  },
-  link: {
-    color: 'var(--accent)',
-    textDecoration: 'none',
-    fontWeight: 600,
-  },
 }

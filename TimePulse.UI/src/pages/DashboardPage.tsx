@@ -2,6 +2,18 @@ import { useState, useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { logoutUser } from '../store/slices/authSlice'
 import { increment, decrement, reset } from '../store/slices/counterSlice'
+import {
+  Clock,
+  LogOut,
+  Users,
+  Shield,
+  CloudSun,
+  RefreshCw,
+  Sliders,
+  CheckCircle2,
+  Calendar,
+  Layers,
+} from 'lucide-react'
 
 interface WeatherItem {
   date: string
@@ -80,341 +92,232 @@ export function DashboardPage() {
   }
 
   return (
-    <div style={styles.container}>
-      {/* Navbar */}
-      <header style={styles.navbar}>
-        <div style={styles.brand}>
-          <span style={styles.logo}>⚡ TimePulse</span>
-          <span style={styles.tag}>Dashboard</span>
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-lg text-white">TimePulse</span>
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                Dashboard
+              </span>
+            </div>
+            <p className="text-xs text-slate-400">Enterprise Time & Pulse Tracking</p>
+          </div>
         </div>
 
-        <div style={styles.navUser}>
-          <div style={styles.userInfo}>
-            <span style={styles.userName}>{user?.name}</span>
-            <span style={styles.userEmail}>{user?.email}</span>
+        {/* User Info & Actions */}
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:flex flex-col text-right">
+            <span className="text-sm font-semibold text-white">{user?.name}</span>
+            <span className="text-xs text-slate-400">{user?.email}</span>
           </div>
 
-          <div style={styles.roleBadges}>
+          <div className="flex gap-1.5">
             {user?.roles.map((r) => (
-              <span key={r} style={styles.roleBadge}>
+              <span
+                key={r}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-600/20 border border-indigo-500/30 text-indigo-300"
+              >
+                <Shield className="w-3 h-3" />
                 {r}
               </span>
             ))}
           </div>
 
-          <button onClick={handleLogout} style={styles.logoutBtn}>
-            Log Out
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 text-xs font-medium text-slate-300 transition-all cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Logout</span>
           </button>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main style={styles.main}>
-        {/* Welcome Card */}
-        <section style={styles.card}>
-          <h2 style={styles.cardTitle}>Welcome back, {user?.name}!</h2>
-          <p style={styles.cardText}>
-            You are securely authenticated using <strong>JWT in httpOnly cookies</strong> with 1-minute access token lifetime and automatic refresh token rotation.
-          </p>
-        </section>
+      {/* Main Container */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
+        {/* Welcome Banner */}
+        <div className="bg-gradient-to-r from-indigo-950/60 via-slate-900/60 to-purple-950/40 border border-indigo-900/40 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white mb-1">Welcome back, {user?.name}! 👋</h1>
+              <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
+                You are securely authenticated using <strong>JWT in httpOnly cookies</strong> (1-min access token + 7-day refresh token rotation).
+              </p>
+            </div>
+            <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl text-emerald-400 text-xs font-medium shrink-0">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>JWT Cookie Active</span>
+            </div>
+          </div>
+        </div>
 
-        {/* Admin Section */}
+        {/* Admin Management Section */}
         {isAdmin && (
-          <section style={styles.card}>
-            <div style={styles.sectionHeader}>
-              <h3 style={styles.sectionTitle}>👥 User Management (Admin Only)</h3>
-              <button onClick={fetchUsers} style={styles.refreshBtn} disabled={usersLoading}>
-                {usersLoading ? 'Refreshing...' : 'Refresh Users'}
+          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-indigo-400" />
+                <h2 className="text-lg font-semibold text-white">User Management (Admin Only)</h2>
+              </div>
+              <button
+                onClick={fetchUsers}
+                disabled={usersLoading}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${usersLoading ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
               </button>
             </div>
 
-            {usersError && <p style={styles.errorText}>{usersError}</p>}
+            {usersError && (
+              <div className="p-3 mb-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+                {usersError}
+              </div>
+            )}
 
-            <div style={styles.tableWrapper}>
-              <table style={styles.table}>
-                <thead>
+            <div className="overflow-x-auto rounded-xl border border-slate-800">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead className="bg-slate-950/60 text-slate-400 text-xs uppercase tracking-wider">
                   <tr>
-                    <th style={styles.th}>Name</th>
-                    <th style={styles.th}>Email</th>
-                    <th style={styles.th}>Roles</th>
-                    <th style={styles.th}>Created At</th>
+                    <th className="px-4 py-3 border-b border-slate-800">Name</th>
+                    <th className="px-4 py-3 border-b border-slate-800">Email</th>
+                    <th className="px-4 py-3 border-b border-slate-800">Assigned Roles</th>
+                    <th className="px-4 py-3 border-b border-slate-800">Joined</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-800/60">
                   {users.map((u) => (
-                    <tr key={u.id} style={styles.tr}>
-                      <td style={styles.td}>{u.fullName}</td>
-                      <td style={styles.td}>{u.email}</td>
-                      <td style={styles.td}>
-                        {u.roles.map((r) => (
-                          <span key={r} style={styles.miniRoleBadge}>
-                            {r}
-                          </span>
-                        ))}
+                    <tr key={u.id} className="hover:bg-slate-800/30 transition-colors">
+                      <td className="px-4 py-3 font-medium text-white">{u.fullName}</td>
+                      <td className="px-4 py-3 text-slate-400 font-mono text-xs">{u.email}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {u.roles.map((r) => (
+                            <span
+                              key={r}
+                              className="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-950 border border-indigo-800/60 text-indigo-300"
+                            >
+                              {r}
+                            </span>
+                          ))}
+                        </div>
                       </td>
-                      <td style={styles.td}>{new Date(u.createdAtUtc).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-slate-400 text-xs">
+                        {new Date(u.createdAtUtc).toLocaleDateString()}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </section>
+          </div>
         )}
 
-        {/* Protected API Test Card */}
-        <section style={styles.card}>
-          <div style={styles.sectionHeader}>
-            <h3 style={styles.sectionTitle}>🔒 Protected API Test: Weather Forecast</h3>
-            <button onClick={fetchWeather} style={styles.refreshBtn} disabled={forecastLoading}>
-              {forecastLoading ? 'Loading...' : 'Fetch Forecast'}
-            </button>
-          </div>
-
-          <p style={styles.hintText}>
-            Endpoint <code>/weatherforecast</code> requires <code>[Authorize]</code>. Requests succeed via cookie credentials.
-          </p>
-
-          {forecastError && <p style={styles.errorText}>{forecastError}</p>}
-
-          <div style={styles.forecastGrid}>
-            {forecasts.map((f, i) => (
-              <div key={i} style={styles.forecastCard}>
-                <div style={styles.forecastDate}>{f.date}</div>
-                <div style={styles.forecastTemp}>{f.temperatureC}°C ({f.temperatureF}°F)</div>
-                <div style={styles.forecastSummary}>{f.summary}</div>
+        {/* Two-Column Grid: Weather API Test & Redux State Demo */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Protected API Test */}
+          <div className="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-lg flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <CloudSun className="w-5 h-5 text-indigo-400" />
+                  <h2 className="text-lg font-semibold text-white">Protected API Test: Weather Forecast</h2>
+                </div>
+                <button
+                  onClick={fetchWeather}
+                  disabled={forecastLoading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${forecastLoading ? 'animate-spin' : ''}`} />
+                  <span>Fetch Forecast</span>
+                </button>
               </div>
-            ))}
-          </div>
-        </section>
 
-        {/* Redux State Demo */}
-        <section style={styles.card}>
-          <h3 style={styles.sectionTitle}>🎛️ Redux State Demo (Counter)</h3>
-          <div style={styles.counterRow}>
-            <button onClick={() => dispatch(decrement())} style={styles.counterBtn}>-</button>
-            <span style={styles.counterVal}>{counter}</span>
-            <button onClick={() => dispatch(increment())} style={styles.counterBtn}>+</button>
-            <button onClick={() => dispatch(reset())} style={styles.resetBtn}>Reset</button>
+              <p className="text-xs text-slate-400 mb-4">
+                Validates the <code className="text-indigo-300 bg-indigo-950/60 px-1 py-0.5 rounded font-mono">/weatherforecast</code> endpoint protected by <code className="text-indigo-300 bg-indigo-950/60 px-1 py-0.5 rounded font-mono">[Authorize]</code>.
+              </p>
+
+              {forecastError && (
+                <div className="p-3 mb-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+                  {forecastError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                {forecasts.map((f, i) => (
+                  <div key={i} className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-center flex flex-col justify-between">
+                    <div className="flex items-center justify-center gap-1 text-slate-400 text-xs mb-2">
+                      <Calendar className="w-3 h-3" />
+                      <span>{f.date}</span>
+                    </div>
+                    <div className="text-xl font-bold text-white my-1">
+                      {f.temperatureC}°C
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      {f.temperatureF}°F
+                    </div>
+                    <div className="mt-2 text-xs font-medium text-indigo-400 truncate">
+                      {f.summary}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </section>
+
+          {/* Redux State Demo */}
+          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-lg flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Sliders className="w-5 h-5 text-indigo-400" />
+                <h2 className="text-lg font-semibold text-white">Redux State Demo</h2>
+              </div>
+              <p className="text-xs text-slate-400 mb-6">
+                Verified Redux Toolkit slice state management alongside authentication.
+              </p>
+
+              <div className="flex flex-col items-center justify-center p-6 rounded-xl bg-slate-950/60 border border-slate-800 mb-4">
+                <span className="text-xs text-slate-400 uppercase tracking-widest font-semibold mb-1">
+                  Counter Value
+                </span>
+                <span className="text-4xl font-extrabold text-white font-mono">{counter}</span>
+              </div>
+
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  onClick={() => dispatch(decrement())}
+                  className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-lg flex items-center justify-center transition-all cursor-pointer"
+                >
+                  -
+                </button>
+                <button
+                  onClick={() => dispatch(increment())}
+                  className="w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg flex items-center justify-center transition-all shadow-lg shadow-indigo-600/30 cursor-pointer"
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => dispatch(reset())}
+                  className="px-4 h-10 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold transition-all cursor-pointer"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-slate-800 text-center flex items-center justify-center gap-1.5 text-xs text-slate-500">
+              <Layers className="w-3.5 h-3.5" />
+              <span>Redux Toolkit + React Router + Tailwind</span>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    width: '100%',
-    textAlign: 'left',
-  },
-  navbar: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '16px 28px',
-    borderBottom: '1px solid var(--border)',
-    background: 'var(--bg)',
-    flexWrap: 'wrap',
-    gap: '16px',
-  },
-  brand: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  },
-  logo: {
-    fontSize: '22px',
-    fontWeight: 700,
-    color: 'var(--text-h)',
-  },
-  tag: {
-    fontSize: '12px',
-    padding: '2px 8px',
-    borderRadius: '12px',
-    background: 'var(--accent-bg)',
-    color: 'var(--accent)',
-    fontWeight: 600,
-  },
-  navUser: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-  },
-  userInfo: {
-    display: 'flex',
-    flexDirection: 'column',
-    textAlign: 'right',
-  },
-  userName: {
-    fontSize: '14px',
-    fontWeight: 600,
-    color: 'var(--text-h)',
-  },
-  userEmail: {
-    fontSize: '12px',
-    color: 'var(--text)',
-  },
-  roleBadges: {
-    display: 'flex',
-    gap: '6px',
-  },
-  roleBadge: {
-    fontSize: '12px',
-    fontWeight: 600,
-    background: 'var(--accent)',
-    color: '#fff',
-    padding: '3px 8px',
-    borderRadius: '6px',
-  },
-  miniRoleBadge: {
-    fontSize: '11px',
-    fontWeight: 600,
-    background: 'var(--accent-bg)',
-    color: 'var(--accent)',
-    padding: '2px 6px',
-    borderRadius: '4px',
-    marginRight: '4px',
-  },
-  logoutBtn: {
-    padding: '8px 16px',
-    borderRadius: '6px',
-    border: '1px solid var(--border)',
-    background: 'transparent',
-    color: 'var(--text-h)',
-    cursor: 'pointer',
-    fontWeight: 500,
-  },
-  main: {
-    padding: '28px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-  },
-  card: {
-    background: 'var(--bg)',
-    border: '1px solid var(--border)',
-    borderRadius: '12px',
-    padding: '24px',
-    boxShadow: 'var(--shadow)',
-  },
-  cardTitle: {
-    margin: '0 0 8px 0',
-    fontSize: '22px',
-  },
-  cardText: {
-    color: 'var(--text)',
-    fontSize: '15px',
-    lineHeight: '150%',
-  },
-  sectionHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '14px',
-  },
-  sectionTitle: {
-    margin: 0,
-    fontSize: '18px',
-    color: 'var(--text-h)',
-  },
-  refreshBtn: {
-    padding: '6px 14px',
-    fontSize: '13px',
-    borderRadius: '6px',
-    border: '1px solid var(--border)',
-    background: 'var(--accent-bg)',
-    color: 'var(--accent)',
-    cursor: 'pointer',
-    fontWeight: 600,
-  },
-  hintText: {
-    fontSize: '13px',
-    color: 'var(--text)',
-    marginBottom: '16px',
-  },
-  errorText: {
-    color: '#ef4444',
-    fontSize: '14px',
-    margin: '8px 0',
-  },
-  forecastGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-    gap: '12px',
-    marginTop: '12px',
-  },
-  forecastCard: {
-    padding: '14px',
-    borderRadius: '8px',
-    border: '1px solid var(--border)',
-    background: 'var(--social-bg)',
-  },
-  forecastDate: {
-    fontSize: '12px',
-    color: 'var(--text)',
-    marginBottom: '4px',
-  },
-  forecastTemp: {
-    fontSize: '16px',
-    fontWeight: 700,
-    color: 'var(--text-h)',
-    marginBottom: '4px',
-  },
-  forecastSummary: {
-    fontSize: '13px',
-    color: 'var(--accent)',
-    fontWeight: 500,
-  },
-  tableWrapper: {
-    overflowX: 'auto',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    fontSize: '14px',
-  },
-  th: {
-    textAlign: 'left',
-    padding: '10px 12px',
-    borderBottom: '1px solid var(--border)',
-    color: 'var(--text-h)',
-    fontWeight: 600,
-  },
-  tr: {
-    borderBottom: '1px solid var(--border)',
-  },
-  td: {
-    padding: '10px 12px',
-    color: 'var(--text)',
-  },
-  counterRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginTop: '14px',
-  },
-  counterBtn: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '6px',
-    border: '1px solid var(--border)',
-    background: 'var(--accent)',
-    color: '#fff',
-    fontSize: '18px',
-    cursor: 'pointer',
-  },
-  counterVal: {
-    fontSize: '20px',
-    fontWeight: 700,
-    minWidth: '40px',
-    textAlign: 'center',
-  },
-  resetBtn: {
-    padding: '8px 14px',
-    borderRadius: '6px',
-    border: '1px solid var(--border)',
-    background: 'transparent',
-    cursor: 'pointer',
-    fontSize: '13px',
-  },
 }
