@@ -13,10 +13,27 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
+        var databaseProvider = configuration["DatabaseProvider"];
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
         services.AddDbContext<TimePulseDbContext>(options =>
-            options.UseNpgsql(connectionString));
+        {
+            switch (databaseProvider?.ToLowerInvariant())
+            {
+                case "postgres":
+                    options.UseNpgsql(connectionString);
+                    break;
+                case "mssql":
+                    options.UseSqlServer(connectionString);
+                    break;
+                case "mysql":
+                case "mariadb":
+                    options.UseMySQL(connectionString!);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unsupported database provider: {databaseProvider}");
+            }
+        });
 
         services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<TimePulseDbContext>());
