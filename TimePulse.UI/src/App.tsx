@@ -4,8 +4,8 @@ import { useAppDispatch, useAppSelector } from './store/hooks'
 import { checkAuth } from './store/slices/authSlice'
 import { fetchBranding } from './store/slices/brandingSlice'
 import { applyThemeToDom } from './store/slices/themeSlice'
-import { ProtectedRoute } from './components/ProtectedRoute'
-import { PublicOnlyRoute } from './components/PublicOnlyRoute'
+import { ProtectedRoute } from './components/common/ProtectedRoute'
+import { PublicOnlyRoute } from './components/common/PublicOnlyRoute'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -50,7 +50,7 @@ function App() {
             isCheckingAuth ? (
               <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 gap-3">
                 <Loader2 className="w-8 h-8 text-indigo-600 dark:text-indigo-500 animate-spin" />
-                <p className="text-sm font-medium">Loading {appName}...</p>
+                <p className="text-sm font-medium">Loading {appName || 'TimePulse'}...</p>
               </div>
             ) : isAuthenticated ? (
               <Navigate to="/dashboard" replace />

@@ -1,4 +1,4 @@
-import { useAppSelector } from '../store/hooks'
+import { useAppSelector } from '../../store/hooks'
 import { Clock } from 'lucide-react'
 
 interface LogoProps {
