@@ -1,16 +1,14 @@
 import type { ChangeEvent } from 'react'
-import { Upload, RotateCcw, Clock } from 'lucide-react'
+import { Upload, Trash2, Clock, Sun, Moon } from 'lucide-react'
 
 interface LogoUploadCardProps {
   title: string
   themeType: 'light' | 'dark'
-  description: string
   logoData: string | null
   logoType: string
   fallbackLogoData?: string | null
   fallbackLogoType?: string
   appName: string
-  fileName: string
   onFileUpload: (e: ChangeEvent<HTMLInputElement>) => void
   onClear: () => void
 }
@@ -18,13 +16,11 @@ interface LogoUploadCardProps {
 export function LogoUploadCard({
   title,
   themeType,
-  description,
   logoData,
   logoType,
   fallbackLogoData,
   fallbackLogoType,
   appName,
-  fileName,
   onFileUpload,
   onClear,
 }: LogoUploadCardProps) {
@@ -33,46 +29,49 @@ export function LogoUploadCard({
   const activeType = logoData ? logoType : fallbackLogoType || 'Default'
 
   return (
-    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3">
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+    <div className="p-4 rounded-xl bg-slate-50/60 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3">
+      {/* Header Row */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          {isLight ? (
+            <Sun className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+          ) : (
+            <Moon className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+          )}
+          <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
             {title}
           </span>
-          <span className="text-[11px] px-2 py-0.5 rounded-md font-medium bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-            {logoData ? logoType : isLight ? 'Default' : 'Inherits Light'}
-          </span>
         </div>
-        <p className="text-[11px] text-slate-500 dark:text-slate-400">
-          {description}
-        </p>
+        <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+          {logoData ? logoType : isLight ? 'Default' : 'Inherits Light'}
+        </span>
       </div>
 
-      {/* Mini Preview Box */}
+      {/* Large Logo Display Box */}
       <div
-        className={`p-3 rounded-xl min-h-[58px] flex items-center justify-center gap-2 shadow-inner border ${
+        className={`rounded-xl h-24 flex items-center justify-center gap-2 p-3 border shadow-inner transition-all ${
           isLight
-            ? 'bg-slate-100 border-slate-300/80'
-            : 'bg-slate-900 border-slate-800'
+            ? 'bg-white border-slate-200/80'
+            : 'bg-[#0b0f19] border-slate-800/80'
         }`}
       >
         {activeType === 'Svg' && activeData ? (
           <div
-            className="h-7 max-w-[130px] flex items-center justify-center [&>svg]:h-full [&>svg]:max-h-7 [&>svg]:max-w-[130px] [&>svg]:object-contain overflow-hidden"
+            className="h-9 max-w-[200px] flex items-center justify-center [&>svg]:h-full [&>svg]:w-auto [&>svg]:max-h-9 [&>svg]:max-w-[200px] [&>svg]:object-contain overflow-hidden"
             dangerouslySetInnerHTML={{ __html: activeData }}
           />
         ) : activeData ? (
           <img
             src={activeData}
             alt="Logo preview"
-            className="h-7 max-w-[130px] object-contain"
+            className="h-9 max-w-[200px] object-contain"
           />
         ) : (
-          <Clock className={`w-6 h-6 ${isLight ? 'text-indigo-600' : 'text-indigo-400'}`} />
+          <Clock className={`w-7 h-7 ${isLight ? 'text-indigo-600' : 'text-indigo-400'}`} />
         )}
         {appName && (
           <span
-            className={`font-bold text-sm truncate max-w-[120px] ${
+            className={`font-bold text-base truncate max-w-[160px] ${
               isLight ? 'text-slate-900' : 'text-white'
             }`}
           >
@@ -81,9 +80,10 @@ export function LogoUploadCard({
         )}
       </div>
 
+      {/* Action Buttons Row */}
       <div className="flex items-center gap-2">
-        <label className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 text-xs font-semibold cursor-pointer transition-all">
-          <Upload className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+        <label className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 text-xs font-semibold cursor-pointer shadow-sm transition-all">
+          <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           <span>{logoData ? `Change ${isLight ? 'Light' : 'Dark'} Logo` : `Upload ${isLight ? 'Light' : 'Dark'} Logo`}</span>
           <input
             type="file"
@@ -92,23 +92,18 @@ export function LogoUploadCard({
             className="hidden"
           />
         </label>
+
         {logoData && (
           <button
             type="button"
             onClick={onClear}
-            className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-            title="Clear logo"
+            className="p-2 text-slate-400 hover:text-rose-500 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors shadow-sm cursor-pointer"
+            title="Remove logo"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         )}
       </div>
-
-      {fileName && (
-        <span className="text-[11px] text-slate-500 truncate block">
-          File: {fileName}
-        </span>
-      )}
     </div>
   )
 }
