@@ -26,7 +26,12 @@ export function SettingsTab({ user, isAdmin = false }: SettingsTabProps) {
 
       {/* Focused Active Tab Content */}
       <div className="pt-2">
-        {activeSubTab === 'profile' && <ProfileSettingsCard user={user} />}
+        {activeSubTab === 'profile' && (
+          <ProfileSettingsCard
+            user={user}
+            onNavigateTab={setActiveSubTab}
+          />
+        )}
         {activeSubTab === 'appearance' && <AppearanceSettingsCard />}
         {activeSubTab === 'whitelabeling' && isAdmin && <WhitelabelingSettingsCard />}
         {activeSubTab === 'notifications' && <NotificationSettingsCard />}
