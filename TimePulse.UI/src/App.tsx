@@ -8,7 +8,11 @@ import { ProtectedRoute } from './components/common/ProtectedRoute'
 import { PublicOnlyRoute } from './components/common/PublicOnlyRoute'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
-import { DashboardPage } from './pages/DashboardPage'
+import { DashboardLayout } from './components/layout/DashboardLayout'
+import { OverviewPage } from './pages/OverviewPage'
+import { TimeTrackerPage } from './pages/TimeTrackerPage'
+import { UserManagementPage } from './pages/UserManagementPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { Loader2 } from 'lucide-react'
 
 function App() {
@@ -47,7 +51,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Root Route: / => if authenticated /dashboard else /login */}
+        {/* Root Route: / => if authenticated /overview else /login */}
         <Route
           path="/"
           element={
@@ -57,22 +61,29 @@ function App() {
                 <p className="text-sm font-medium">Loading {appName || 'TimePulse'}...</p>
               </div>
             ) : isAuthenticated ? (
-              <Navigate to="/dashboard" replace />
+              <Navigate to="/overview" replace />
             ) : (
               <Navigate to="/login" replace />
             )
           }
         />
 
-        {/* Public Routes (Redirect to /dashboard if already authenticated) */}
+        {/* Public Routes (Redirect to /overview if already authenticated) */}
         <Route element={<PublicOnlyRoute />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
         </Route>
 
-        {/* Protected Routes (Redirect to /login if not authenticated) */}
+        {/* Protected Application Routes with DashboardLayout */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<Navigate to="/overview" replace />} />
+            <Route path="/overview" element={<OverviewPage />} />
+            <Route path="/timetracker" element={<TimeTrackerPage />} />
+            <Route path="/users" element={<UserManagementPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings/:subTab" element={<SettingsPage />} />
+          </Route>
         </Route>
 
         {/* Catch-all: redirect to / */}

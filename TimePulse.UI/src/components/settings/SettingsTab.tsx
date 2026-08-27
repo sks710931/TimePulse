@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { SettingsNavTabs, type SettingsTabId } from './SettingsNavTabs'
 import { ProfileSettingsCard } from './ProfileSettingsCard'
 import { AppearanceSettingsCard } from './AppearanceSettingsCard'
@@ -13,29 +13,44 @@ interface SettingsTabProps {
 }
 
 export function SettingsTab({ user, isAdmin = false }: SettingsTabProps) {
-  const [activeSubTab, setActiveSubTab] = useState<SettingsTabId>('profile')
+  const { subTab } = useParams<{ subTab?: string }>()
+  const navigate = useNavigate()
+
+  // Normalize subTab (support whitelabelling / whitelabeling)
+  const normalizedSubTab: SettingsTabId =
+    subTab === 'appearance' ||
+    subTab === 'notifications' ||
+    subTab === 'security'
+      ? subTab
+      : subTab === 'whitelabelling' || subTab === 'whitelabeling'
+      ? 'whitelabeling'
+      : 'profile'
+
+  const handleSelectTab = (tabId: SettingsTabId) => {
+    navigate(`/settings/${tabId}`)
+  }
 
   return (
     <div className="space-y-6">
       {/* Horizontal Tabs Navigation */}
       <SettingsNavTabs
-        activeTab={activeSubTab}
-        onSelectTab={setActiveSubTab}
+        activeTab={normalizedSubTab}
+        onSelectTab={handleSelectTab}
         isAdmin={isAdmin}
       />
 
       {/* Focused Active Tab Content */}
       <div className="pt-2">
-        {activeSubTab === 'profile' && (
+        {normalizedSubTab === 'profile' && (
           <ProfileSettingsCard
             user={user}
-            onNavigateTab={setActiveSubTab}
+            onNavigateTab={handleSelectTab}
           />
         )}
-        {activeSubTab === 'appearance' && <AppearanceSettingsCard />}
-        {activeSubTab === 'whitelabeling' && isAdmin && <WhitelabelingSettingsCard />}
-        {activeSubTab === 'notifications' && <NotificationSettingsCard />}
-        {activeSubTab === 'security' && <SecuritySettingsCard />}
+        {normalizedSubTab === 'appearance' && <AppearanceSettingsCard />}
+        {normalizedSubTab === 'whitelabeling' && isAdmin && <WhitelabelingSettingsCard />}
+        {normalizedSubTab === 'notifications' && <NotificationSettingsCard />}
+        {normalizedSubTab === 'security' && <SecuritySettingsCard />}
       </div>
     </div>
   )
