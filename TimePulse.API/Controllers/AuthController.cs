@@ -11,13 +11,18 @@ namespace TimePulse.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IUserService _userService;
     private readonly IConfiguration _configuration;
     private const string AccessTokenCookie = "tp_access";
     private const string RefreshTokenCookie = "tp_refresh";
 
-    public AuthController(IAuthService authService, IConfiguration configuration)
+    public AuthController(
+        IAuthService authService,
+        IUserService userService,
+        IConfiguration configuration)
     {
         _authService = authService;
+        _userService = userService;
         _configuration = configuration;
     }
 
@@ -62,7 +67,7 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
         var refreshToken = Request.Cookies[RefreshTokenCookie];
 
         if (Guid.TryParse(userId, out var parsedUserId) && !string.IsNullOrEmpty(refreshToken))
@@ -76,14 +81,42 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpGet("me")]
-    public IActionResult Me()
+    public async Task<IActionResult> Me(CancellationToken cancellationToken)
     {
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("sub")?.Value;
+
+        if (Guid.TryParse(userIdStr, out var userId))
+        {
+            var user = await _userService.GetUserByIdAsync(userId, cancellationToken);
+            if (user is not null)
+            {
+                return Ok(new
+                {
+                    id = user.Id.ToString(),
+                    email = user.Email,
+                    fullName = user.FullName,
+                    name = user.FullName,
+                    roles = user.Roles.ToArray()
+                });
+            }
+        }
+
+        var fallbackName = User.FindFirst(ClaimTypes.Name)?.Value
+            ?? User.FindFirst("name")?.Value
+            ?? User.FindFirst("fullName")?.Value
+            ?? User.FindFirst("unique_name")?.Value;
+
         return Ok(new
         {
-            id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value,
-            email = User.FindFirst(ClaimTypes.Email)?.Value,
-            name = User.FindFirst(ClaimTypes.Name)?.Value,
-            roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray()
+            id = userIdStr,
+            email = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("email")?.Value,
+            fullName = fallbackName,
+            name = fallbackName,
+            roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value)
+                .Concat(User.FindAll("role").Select(c => c.Value))
+                .Distinct()
+                .ToArray()
         });
     }
 

@@ -20,10 +20,11 @@ export const authApi = {
       throw new Error(`Failed to fetch profile (${res.status})`)
     }
     const data = await res.json()
-    // Map both fullName and name for safety
+    const resolvedName = data.fullName || data.name || data.email?.split('@')[0] || 'User'
     return {
       ...data,
-      name: data.name || data.fullName,
+      fullName: resolvedName,
+      name: resolvedName,
     }
   },
 

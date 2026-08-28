@@ -27,14 +27,20 @@ public class TokenService : ITokenService
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
+            new(ClaimTypes.Email, user.Email),
             new(JwtRegisteredClaimNames.Name, user.FullName),
+            new(ClaimTypes.Name, user.FullName),
+            new("name", user.FullName),
+            new("fullName", user.FullName),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
         foreach (var userRole in user.Roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, userRole.Role));
+            claims.Add(new Claim("role", userRole.Role));
         }
 
         var expirationMinutes = int.Parse(

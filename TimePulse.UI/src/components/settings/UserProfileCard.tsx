@@ -7,7 +7,7 @@ interface UserProfileCardProps {
 }
 
 export function UserProfileCard({ user, displayName }: UserProfileCardProps) {
-  const nameToDisplay = displayName || user?.name || user?.fullName || user?.email?.split('@')[0] || 'User'
+  const nameToDisplay = displayName || user?.fullName || user?.name || user?.email?.split('@')[0] || 'User'
 
   const initials = nameToDisplay
     .split(' ')

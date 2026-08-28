@@ -8,13 +8,13 @@ interface PersonalDetailsCardProps {
 }
 
 export function PersonalDetailsCard({ user, onNameChange }: PersonalDetailsCardProps) {
-  const [fullName, setFullName] = useState(user?.name || user?.fullName || '')
-  const [displayName, setDisplayName] = useState(user?.name || user?.fullName || '')
+  const [fullName, setFullName] = useState(user?.fullName || user?.name || '')
+  const [displayName, setDisplayName] = useState(user?.fullName || user?.name || '')
   const [isSaved, setIsSaved] = useState(false)
 
   useEffect(() => {
     if (user) {
-      const initialName = user.name || user.fullName || ''
+      const initialName = user.fullName || user.name || ''
       setFullName(initialName)
       setDisplayName(initialName)
     }
@@ -28,7 +28,7 @@ export function PersonalDetailsCard({ user, onNameChange }: PersonalDetailsCardP
   }
 
   const handleCancel = () => {
-    const initialName = user?.name || user?.fullName || ''
+    const initialName = user?.fullName || user?.name || ''
     setFullName(initialName)
     setDisplayName(initialName)
     setIsSaved(false)

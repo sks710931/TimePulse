@@ -14,11 +14,11 @@ interface ProfileSettingsCardProps {
 }
 
 export function ProfileSettingsCard({ user, onNavigateTab }: ProfileSettingsCardProps) {
-  const [currentDisplayName, setCurrentDisplayName] = useState(user?.name || user?.fullName || '')
+  const [currentDisplayName, setCurrentDisplayName] = useState(user?.fullName || user?.name || '')
 
   useEffect(() => {
     if (user) {
-      setCurrentDisplayName(user.name || user.fullName || '')
+      setCurrentDisplayName(user.fullName || user.name || '')
     }
   }, [user])
 
