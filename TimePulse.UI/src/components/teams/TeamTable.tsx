@@ -42,6 +42,8 @@ export function TeamTable({
           {teams.map((t) => {
             const accentColor = t.colorHex || '#4F46E5'
             const initial = t.name.charAt(0).toUpperCase()
+            const memberCount = t.members.length
+            const memberNames = t.members.map((m) => m.fullName || m.email).join(', ')
 
             return (
               <tr
@@ -70,30 +72,22 @@ export function TeamTable({
                   </div>
                 </td>
 
-                {/* Team Members */}
+                {/* Team Members Count */}
                 <td className="px-4 py-3.5">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {t.members.length > 0 ? (
-                      t.members.slice(0, 3).map((m) => (
-                        <span
-                          key={m.userId}
-                          title={`${m.fullName || m.email} (${m.roles.join(', ')})`}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80"
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                          <span className="truncate max-w-[90px]">{m.fullName || m.email}</span>
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-slate-400 text-xs italic">No members assigned</span>
-                    )}
-
-                    {t.members.length > 3 && (
-                      <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
-                        +{t.members.length - 3} more
-                      </span>
-                    )}
-                  </div>
+                  {memberCount > 0 ? (
+                    <span
+                      title={memberNames}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700"
+                    >
+                      <Users className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                      <span>{memberCount} {memberCount === 1 ? 'member' : 'members'}</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-normal text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800">
+                      <Users className="w-3.5 h-3.5 opacity-50 shrink-0" />
+                      <span>0 members</span>
+                    </span>
+                  )}
                 </td>
 
                 {/* Assigned Projects */}
