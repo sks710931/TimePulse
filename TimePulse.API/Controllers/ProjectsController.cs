@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TimePulse.Application.Common.Interfaces;
@@ -21,17 +22,19 @@ public class ProjectsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllProjects(CancellationToken cancellationToken)
     {
-        var projects = await _projectService.GetAllProjectsAsync(cancellationToken);
+        var (callerUserId, isAdmin, isManager) = GetCallerInfo();
+        var projects = await _projectService.GetProjectsForCallerAsync(callerUserId, isAdmin, isManager, cancellationToken);
         return Ok(projects);
     }
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetProjectById(Guid id, CancellationToken cancellationToken)
     {
-        var project = await _projectService.GetProjectByIdAsync(id, cancellationToken);
+        var (callerUserId, isAdmin, isManager) = GetCallerInfo();
+        var project = await _projectService.GetProjectByIdAsync(id, callerUserId, isAdmin, isManager, cancellationToken);
         if (project is null)
         {
-            return NotFound(new { error = "Project not found." });
+            return NotFound(new { error = "Project not found or access restricted." });
         }
 
         return Ok(project);
@@ -87,5 +90,22 @@ public class ProjectsController : ControllerBase
         }
 
         return Ok(result.Data);
+    }
+
+    private (Guid CallerUserId, bool IsAdmin, bool IsManager) GetCallerInfo()
+    {
+        var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("sub")?.Value;
+
+        var userId = Guid.TryParse(idClaim, out var parsedId) ? parsedId : Guid.Empty;
+
+        var roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value)
+            .Concat(User.FindAll("role").Select(c => c.Value))
+            .ToList();
+
+        var isAdmin = roles.Any(r => r.Equals(Roles.Admin, StringComparison.OrdinalIgnoreCase));
+        var isManager = roles.Any(r => r.Equals(Roles.Manager, StringComparison.OrdinalIgnoreCase));
+
+        return (userId, isAdmin, isManager);
     }
 }

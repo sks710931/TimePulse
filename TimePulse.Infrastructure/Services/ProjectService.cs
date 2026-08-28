@@ -15,16 +15,51 @@ public class ProjectService : IProjectService
         _projectRepository = projectRepository;
     }
 
-    public async Task<IReadOnlyList<ProjectDto>> GetAllProjectsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ProjectDto>> GetProjectsForCallerAsync(
+        Guid callerUserId,
+        bool isCallerAdmin,
+        bool isCallerManager,
+        CancellationToken cancellationToken = default)
     {
-        var projects = await _projectRepository.GetAllAsync(cancellationToken);
+        IReadOnlyList<Project> projects;
+
+        if (isCallerAdmin || isCallerManager)
+        {
+            projects = await _projectRepository.GetAllAsync(cancellationToken);
+        }
+        else
+        {
+            // Employees can only see projects assigned to teams they belong to
+            projects = await _projectRepository.GetProjectsByUserIdAsync(callerUserId, cancellationToken);
+        }
+
         return projects.Select(MapToDto).ToList();
     }
 
-    public async Task<ProjectDto?> GetProjectByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ProjectDto?> GetProjectByIdAsync(
+        Guid id,
+        Guid callerUserId,
+        bool isCallerAdmin,
+        bool isCallerManager,
+        CancellationToken cancellationToken = default)
     {
         var project = await _projectRepository.GetByIdAsync(id, cancellationToken);
-        return project is null ? null : MapToDto(project);
+        if (project is null)
+        {
+            return null;
+        }
+
+        // Employees can only see project details if assigned to a team they belong to
+        if (!isCallerAdmin && !isCallerManager)
+        {
+            var isMemberOfAssignedTeam = project.Teams.Any(tp => tp.Team != null && tp.Team.Members.Any(m => m.UserId == callerUserId));
+            if (!isMemberOfAssignedTeam)
+            {
+                return null;
+            }
+        }
+
+        return MapToDto(project);
     }
 
     public async Task<Result<ProjectDto>> CreateProjectAsync(CreateProjectRequest request, CancellationToken cancellationToken = default)

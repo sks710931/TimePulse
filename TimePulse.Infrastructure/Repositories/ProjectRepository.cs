@@ -25,6 +25,18 @@ public class ProjectRepository : IProjectRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Project>> GetProjectsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Projects
+            .AsNoTracking()
+            .Include(p => p.Teams)
+                .ThenInclude(tp => tp.Team)
+                    .ThenInclude(t => t!.Members)
+            .Where(p => p.Teams.Any(tp => tp.Team != null && tp.Team.Members.Any(m => m.UserId == userId)))
+            .OrderByDescending(p => p.CreatedAtUtc)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<Project?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Projects
