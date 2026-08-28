@@ -1,8 +1,10 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TimePulse.Application;
 using TimePulse.Infrastructure;
+using TimePulse.Infrastructure.Data;
 
 namespace TimePulse.API;
 
@@ -63,6 +65,21 @@ public static class HostingExtensions
 
     public static WebApplication ConfigurePipeline(this WebApplication app)
     {
+        // Apply pending database migrations on startup
+        using (var scope = app.Services.CreateScope())
+        {
+            try
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<TimePulseDbContext>();
+                dbContext.Database.Migrate();
+            }
+            catch (Exception ex)
+            {
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<WebApplication>>();
+                logger.LogError(ex, "An error occurred while migrating the database.");
+            }
+        }
+
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {

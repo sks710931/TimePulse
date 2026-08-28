@@ -10,6 +10,7 @@ public class TimePulseDbContext : DbContext, IApplicationDbContext
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<BrandSettings> BrandSettings => Set<BrandSettings>();
+    public DbSet<Project> Projects => Set<Project>();
 
     public TimePulseDbContext(DbContextOptions<TimePulseDbContext> options)
         : base(options)

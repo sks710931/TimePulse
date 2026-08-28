@@ -43,12 +43,14 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IBrandSettingsRepository, BrandSettingsRepository>();
+        services.AddScoped<IProjectRepository, ProjectRepository>();
 
         // Services
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IBrandingService, BrandingService>();
+        services.AddScoped<IProjectService, ProjectService>();
 
         return services;
     }
