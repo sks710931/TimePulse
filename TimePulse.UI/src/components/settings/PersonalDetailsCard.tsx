@@ -1,38 +1,25 @@
-import { useState, useEffect } from 'react'
-import { User, Mail, Save, X, CheckCircle2 } from 'lucide-react'
+import { useState } from 'react'
+import { User, Mail, Shield, KeyRound, Copy, Check } from 'lucide-react'
 import type { UserProfile } from '../../api/authApi'
 
 interface PersonalDetailsCardProps {
   user: UserProfile | null
-  onNameChange: (fullName: string, displayName: string) => void
 }
 
-export function PersonalDetailsCard({ user, onNameChange }: PersonalDetailsCardProps) {
-  const [fullName, setFullName] = useState(user?.fullName || user?.name || '')
-  const [displayName, setDisplayName] = useState(user?.fullName || user?.name || '')
-  const [isSaved, setIsSaved] = useState(false)
+export function PersonalDetailsCard({ user }: PersonalDetailsCardProps) {
+  const [copiedId, setCopiedId] = useState(false)
 
-  useEffect(() => {
-    if (user) {
-      const initialName = user.fullName || user.name || ''
-      setFullName(initialName)
-      setDisplayName(initialName)
+  const handleCopyId = () => {
+    if (user?.id) {
+      navigator.clipboard.writeText(user.id)
+      setCopiedId(true)
+      setTimeout(() => setCopiedId(false), 2000)
     }
-  }, [user])
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault()
-    onNameChange(fullName, displayName)
-    setIsSaved(true)
-    setTimeout(() => setIsSaved(false), 3000)
   }
 
-  const handleCancel = () => {
-    const initialName = user?.fullName || user?.name || ''
-    setFullName(initialName)
-    setDisplayName(initialName)
-    setIsSaved(false)
-  }
+  const resolvedName = user?.fullName || user?.name || '—'
+  const resolvedEmail = user?.email || '—'
+  const roles = user?.roles && user.roles.length > 0 ? user.roles : ['User']
 
   return (
     <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
@@ -41,92 +28,89 @@ export function PersonalDetailsCard({ user, onNameChange }: PersonalDetailsCardP
         <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
         <div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-            Personal Details
+            Account Details
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Update your personal information.
+            Your verified identity and credentials.
           </p>
         </div>
       </div>
 
-      {isSaved && (
-        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-          <span>Personal details updated successfully.</span>
-        </div>
-      )}
-
-      {/* Form Fields */}
-      <form onSubmit={handleSave} className="space-y-4">
+      {/* Details Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Full Name */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-            Full Name
-          </label>
-          <input
-            type="text"
-            value={fullName}
-            onChange={(e) => {
-              setFullName(e.target.value)
-              if (!displayName || displayName === fullName) {
-                setDisplayName(e.target.value)
-              }
-            }}
-            placeholder="e.g. S Kumar"
-            className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-xs"
-          />
+        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800 space-y-1">
+          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-semibold">
+            <User className="w-3.5 h-3.5" />
+            <span>Full Name</span>
+          </div>
+          <p className="text-sm font-bold text-slate-900 dark:text-white">
+            {resolvedName}
+          </p>
         </div>
 
-        {/* Display Name */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-            Display Name
-          </label>
-          <input
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="e.g. S Kumar"
-            className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-xs"
-          />
+        {/* Email Address */}
+        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800 space-y-1">
+          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-semibold">
+            <Mail className="w-3.5 h-3.5" />
+            <span>Email Address</span>
+          </div>
+          <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+            {resolvedEmail}
+          </p>
         </div>
 
-        {/* Email Address (read-only) */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-            Email Address (read-only)
-          </label>
-          <div className="relative">
-            <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="email"
-              disabled
-              value={user?.email || 'skumar@gleason.com'}
-              className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-400 text-sm cursor-not-allowed select-all"
-            />
+        {/* Assigned Roles */}
+        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800 space-y-1.5">
+          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-semibold">
+            <Shield className="w-3.5 h-3.5" />
+            <span>Assigned Roles</span>
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {roles.map((r) => (
+              <span
+                key={r}
+                className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300"
+              >
+                {r}
+              </span>
+            ))}
           </div>
         </div>
 
-        {/* Action Buttons Row */}
-        <div className="pt-2 flex items-center gap-3">
-          <button
-            type="submit"
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
-          >
-            <Save className="w-3.5 h-3.5" />
-            <span>Save Changes</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="px-4 py-2.5 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-          >
-            <X className="w-3.5 h-3.5" />
-            <span>Cancel</span>
-          </button>
+        {/* Account ID */}
+        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800 space-y-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-semibold">
+              <KeyRound className="w-3.5 h-3.5" />
+              <span>User ID</span>
+            </div>
+            {user?.id && (
+              <button
+                type="button"
+                onClick={handleCopyId}
+                title="Copy User ID"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors cursor-pointer"
+              >
+                {copiedId ? (
+                  <>
+                    <Check className="w-3 h-3 text-emerald-500" />
+                    <span className="text-emerald-600 dark:text-emerald-400">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3 h-3" />
+                    <span>Copy</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+          <p className="text-xs font-mono text-slate-700 dark:text-slate-300 truncate">
+            {user?.id || '—'}
+          </p>
         </div>
-      </form>
+      </div>
     </div>
   )
 }

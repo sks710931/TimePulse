@@ -1,4 +1,4 @@
-import { Zap, Lock, Download } from 'lucide-react'
+import { Shield, Palette, Bell, ChevronRight, Settings } from 'lucide-react'
 import type { SettingsTabId } from './SettingsNavTabs'
 
 interface ProfileQuickActionsCardProps {
@@ -6,81 +6,71 @@ interface ProfileQuickActionsCardProps {
 }
 
 export function ProfileQuickActionsCard({ onNavigateTab }: ProfileQuickActionsCardProps) {
-  const handleDownloadData = () => {
-    const mockData = {
-      exportDate: new Date().toISOString(),
-      account: 'Active',
-      preferences: {
-        theme: 'System',
-        timeZone: 'Eastern Time (US & Canada)',
-        language: 'English (US)',
-      },
-    }
-    const blob = new Blob([JSON.stringify(mockData, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `timepulse-account-data-${new Date().toISOString().slice(0, 10)}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
+  const links: { id: SettingsTabId; label: string; description: string; icon: typeof Shield }[] = [
+    {
+      id: 'security',
+      label: 'Security & Password',
+      description: 'Change your password and manage session settings',
+      icon: Shield,
+    },
+    {
+      id: 'appearance',
+      label: 'Appearance & Theme',
+      description: 'Customize light, dark, or system color preferences',
+      icon: Palette,
+    },
+    {
+      id: 'notifications',
+      label: 'Notification Preferences',
+      description: 'Configure email and system alert settings',
+      icon: Bell,
+    },
+  ]
 
   return (
     <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2.5">
-        <Zap className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+        <Settings className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
         <div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-            Quick Actions
+            Quick Settings
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Common account actions.
+            Access other account and interface settings.
           </p>
         </div>
       </div>
 
-      {/* Action Buttons Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Change Password */}
-        <button
-          type="button"
-          onClick={() => onNavigateTab?.('security')}
-          className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/40 bg-slate-50/50 dark:bg-slate-950/40 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/20 transition-all text-left flex items-start gap-3 group cursor-pointer"
-        >
-          <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors shrink-0 shadow-xs">
-            <Lock className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-              Change Password
-            </span>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">
-              Update your password
-            </span>
-          </div>
-        </button>
+      {/* Navigation List */}
+      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+        {links.map((link) => {
+          const Icon = link.icon
+          return (
+            <button
+              key={link.id}
+              type="button"
+              onClick={() => onNavigateTab?.(link.id)}
+              className="w-full p-3.5 flex items-center justify-between gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors group cursor-pointer"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors shrink-0">
+                  <Icon className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    {link.label}
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">
+                    {link.description}
+                  </span>
+                </div>
+              </div>
 
-        {/* Download My Data */}
-        <button
-          type="button"
-          onClick={handleDownloadData}
-          className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/40 bg-slate-50/50 dark:bg-slate-950/40 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/20 transition-all text-left flex items-start gap-3 group cursor-pointer"
-        >
-          <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors shrink-0 shadow-xs">
-            <Download className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-              Download My Data
-            </span>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">
-              Export your account data
-            </span>
-          </div>
-        </button>
+              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 group-hover:translate-x-0.5 transition-all shrink-0" />
+            </button>
+          )
+        })}
       </div>
     </div>
   )
