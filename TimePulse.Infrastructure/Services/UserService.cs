@@ -122,12 +122,11 @@ public class UserService : IUserService
             return Result<UserDto>.Failure("User not found.");
         }
 
-        // Fetch caller from DB to guarantee live role accuracy
-        var callerUser = await _userRepository.GetByIdAsync(callerUserId, cancellationToken);
+        var isSelfEdit = targetUserId == callerUserId;
+        var callerUser = isSelfEdit ? targetUser : await _userRepository.GetByIdAsync(callerUserId, cancellationToken);
+
         var effectiveCallerAdmin = isCallerAdmin || callerUser?.HasRole(Roles.Admin) == true;
         var effectiveCallerManager = isCallerManager || callerUser?.HasRole(Roles.Manager) == true;
-
-        var isSelfEdit = targetUserId == callerUserId;
 
         // RBAC Permissions:
         if (effectiveCallerAdmin)
@@ -137,9 +136,8 @@ public class UserService : IUserService
             var willHaveAdmin = request.Roles.Any(r => r.Equals(Roles.Admin, StringComparison.OrdinalIgnoreCase));
             if (targetUser.HasRole(Roles.Admin) && !willHaveAdmin)
             {
-                var allUsers = await _userRepository.GetAllAsync(cancellationToken);
-                var otherAdminCount = allUsers.Count(u => u.Id != targetUserId && u.HasRole(Roles.Admin));
-                if (otherAdminCount == 0)
+                var hasOtherAdmin = await _userRepository.HasOtherAdminAsync(targetUserId, cancellationToken);
+                if (!hasOtherAdmin)
                 {
                     return Result<UserDto>.Failure("Cannot remove the Admin role from the only remaining system administrator.");
                 }

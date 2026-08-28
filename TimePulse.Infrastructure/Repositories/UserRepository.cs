@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TimePulse.Domain.Constants;
 using TimePulse.Domain.Entities;
 using TimePulse.Domain.Repositories;
 using TimePulse.Infrastructure.Data;
@@ -49,6 +50,7 @@ public class UserRepository : IUserRepository
     {
         return await _context.Users
             .Include(u => u.Roles)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 
@@ -61,6 +63,13 @@ public class UserRepository : IUserRepository
     {
         return await _context.Users
             .AnyAsync(u => u.Email == email.ToLowerInvariant(), cancellationToken);
+    }
+
+    public async Task<bool> HasOtherAdminAsync(Guid excludeUserId, CancellationToken cancellationToken = default)
+    {
+        return await _context.UserRoles
+            .AsNoTracking()
+            .AnyAsync(r => r.Role == Roles.Admin && r.UserId != excludeUserId, cancellationToken);
     }
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
