@@ -122,10 +122,15 @@ public class UserService : IUserService
             return Result<UserDto>.Failure("User not found.");
         }
 
+        // Fetch caller from DB to guarantee live role accuracy
+        var callerUser = await _userRepository.GetByIdAsync(callerUserId, cancellationToken);
+        var effectiveCallerAdmin = isCallerAdmin || callerUser?.HasRole(Roles.Admin) == true;
+        var effectiveCallerManager = isCallerManager || callerUser?.HasRole(Roles.Manager) == true;
+
         var isSelfEdit = targetUserId == callerUserId;
 
         // RBAC Permissions:
-        if (isCallerAdmin)
+        if (effectiveCallerAdmin)
         {
             // Admins can edit Admins, Managers, Employees, can assign Admin roles to others, and can take Manager role to themselves.
             // Safety Check: If target has Admin and new roles remove Admin, ensure at least one other Admin exists.
@@ -140,7 +145,7 @@ public class UserService : IUserService
                 }
             }
         }
-        else if (isCallerManager)
+        else if (effectiveCallerManager)
         {
             // Managers can only edit themselves and employees
             if (!isSelfEdit)

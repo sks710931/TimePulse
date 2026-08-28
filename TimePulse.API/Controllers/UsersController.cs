@@ -41,7 +41,9 @@ public class UsersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request, CancellationToken cancellationToken)
     {
-        var isCallerAdmin = User.IsInRole(Roles.Admin);
+        var isCallerAdmin = User.IsInRole(Roles.Admin)
+            || User.Claims.Any(c => (c.Type == ClaimTypes.Role || c.Type == "role") && c.Value.Equals(Roles.Admin, StringComparison.OrdinalIgnoreCase));
+
         var result = await _userService.CreateUserAsync(request, isCallerAdmin, cancellationToken);
 
         if (!result.Succeeded)
@@ -61,8 +63,11 @@ public class UsersController : ControllerBase
             return Unauthorized(new { error = "Invalid user identity." });
         }
 
-        var isCallerAdmin = User.IsInRole(Roles.Admin);
-        var isCallerManager = User.IsInRole(Roles.Manager);
+        var isCallerAdmin = User.IsInRole(Roles.Admin)
+            || User.Claims.Any(c => (c.Type == ClaimTypes.Role || c.Type == "role") && c.Value.Equals(Roles.Admin, StringComparison.OrdinalIgnoreCase));
+
+        var isCallerManager = User.IsInRole(Roles.Manager)
+            || User.Claims.Any(c => (c.Type == ClaimTypes.Role || c.Type == "role") && c.Value.Equals(Roles.Manager, StringComparison.OrdinalIgnoreCase));
 
         var result = await _userService.UpdateUserAsync(id, request, callerUserId, isCallerAdmin, isCallerManager, cancellationToken);
         if (!result.Succeeded)

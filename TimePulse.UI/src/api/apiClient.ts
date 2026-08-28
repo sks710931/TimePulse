@@ -47,12 +47,34 @@ export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {})
   return response
 }
 
+function parseErrorMessage(err: unknown, fallbackStatus: number): string {
+  if (!err || typeof err !== 'object') {
+    return `Request failed with status ${fallbackStatus}`
+  }
+
+  const errObj = err as Record<string, unknown>
+  if (typeof errObj.error === 'string' && errObj.error) {
+    return errObj.error
+  }
+  if (Array.isArray(errObj.errors) && errObj.errors.length > 0) {
+    return errObj.errors.join(', ')
+  }
+  if (typeof errObj.errors === 'string' && errObj.errors) {
+    return errObj.errors
+  }
+  if (typeof errObj.message === 'string' && errObj.message) {
+    return errObj.message
+  }
+
+  return `Request failed with status ${fallbackStatus}`
+}
+
 export const apiClient = {
   async get<T>(url: string): Promise<T> {
     const res = await apiFetch(url, { method: 'GET' })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-      throw new Error(err.error || `Request failed with status ${res.status}`)
+      throw new Error(parseErrorMessage(err, res.status))
     }
     return res.json()
   },
@@ -65,7 +87,7 @@ export const apiClient = {
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-      throw new Error(err.error || `Request failed with status ${res.status}`)
+      throw new Error(parseErrorMessage(err, res.status))
     }
     return res.json()
   },
@@ -78,7 +100,7 @@ export const apiClient = {
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-      throw new Error(err.error || `Request failed with status ${res.status}`)
+      throw new Error(parseErrorMessage(err, res.status))
     }
     return res.json()
   },
@@ -87,7 +109,7 @@ export const apiClient = {
     const res = await apiFetch(url, { method: 'DELETE' })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-      throw new Error(err.error || `Request failed with status ${res.status}`)
+      throw new Error(parseErrorMessage(err, res.status))
     }
     return res.json()
   },
