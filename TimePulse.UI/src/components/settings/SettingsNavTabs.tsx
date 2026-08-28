@@ -1,6 +1,6 @@
-import { User, Palette, Sparkles, Bell, Shield, type LucideIcon } from 'lucide-react'
+import { User, Palette, Sparkles, Shield, type LucideIcon } from 'lucide-react'
 
-export type SettingsTabId = 'profile' | 'appearance' | 'whitelabeling' | 'notifications' | 'security'
+export type SettingsTabId = 'profile' | 'appearance' | 'whitelabeling' | 'security'
 
 interface SettingsNavTabsProps {
   activeTab: SettingsTabId
@@ -20,7 +20,6 @@ export function SettingsNavTabs({ activeTab, onSelectTab, isAdmin }: SettingsNav
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'whitelabeling', label: 'Whitelabelling', icon: Sparkles, adminOnly: true },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'security', label: 'Security', icon: Shield },
   ]
 

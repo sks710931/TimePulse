@@ -1,4 +1,4 @@
-import { Shield, Palette, Bell, ChevronRight, Settings } from 'lucide-react'
+import { Shield, Palette, ChevronRight, Settings } from 'lucide-react'
 import type { SettingsTabId } from './SettingsNavTabs'
 
 interface ProfileQuickActionsCardProps {
@@ -18,12 +18,6 @@ export function ProfileQuickActionsCard({ onNavigateTab }: ProfileQuickActionsCa
       label: 'Appearance & Theme',
       description: 'Customize light, dark, or system color preferences',
       icon: Palette,
-    },
-    {
-      id: 'notifications',
-      label: 'Notification Preferences',
-      description: 'Configure email and system alert settings',
-      icon: Bell,
     },
   ]
 

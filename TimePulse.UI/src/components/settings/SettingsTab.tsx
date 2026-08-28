@@ -3,7 +3,6 @@ import { SettingsNavTabs, type SettingsTabId } from './SettingsNavTabs'
 import { ProfileSettingsCard } from './ProfileSettingsCard'
 import { AppearanceSettingsCard } from './AppearanceSettingsCard'
 import { WhitelabelingSettingsCard } from './WhitelabelingSettingsCard'
-import { NotificationSettingsCard } from './NotificationSettingsCard'
 import { SecuritySettingsCard } from './SecuritySettingsCard'
 import type { UserProfile } from '../../api/authApi'
 
@@ -18,9 +17,7 @@ export function SettingsTab({ user, isAdmin = false }: SettingsTabProps) {
 
   // Normalize subTab (support whitelabelling / whitelabeling)
   const normalizedSubTab: SettingsTabId =
-    subTab === 'appearance' ||
-    subTab === 'notifications' ||
-    subTab === 'security'
+    subTab === 'appearance' || subTab === 'security'
       ? subTab
       : subTab === 'whitelabelling' || subTab === 'whitelabeling'
       ? 'whitelabeling'
@@ -49,7 +46,6 @@ export function SettingsTab({ user, isAdmin = false }: SettingsTabProps) {
         )}
         {normalizedSubTab === 'appearance' && <AppearanceSettingsCard />}
         {normalizedSubTab === 'whitelabeling' && isAdmin && <WhitelabelingSettingsCard />}
-        {normalizedSubTab === 'notifications' && <NotificationSettingsCard />}
         {normalizedSubTab === 'security' && <SecuritySettingsCard />}
       </div>
     </div>
