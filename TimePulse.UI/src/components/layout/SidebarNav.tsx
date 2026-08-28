@@ -1,13 +1,14 @@
 import {
   LayoutDashboard,
   FolderKanban,
+  Users2,
   Users,
   Clock,
   Settings,
   type LucideIcon,
 } from 'lucide-react'
 
-export type TabId = 'overview' | 'timetracker' | 'projects' | 'users' | 'settings'
+export type TabId = 'overview' | 'timetracker' | 'projects' | 'teams' | 'users' | 'settings'
 
 interface NavItemConfig {
   id: TabId
@@ -37,6 +38,7 @@ export function SidebarNav({
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'timetracker', label: 'Time Tracker', icon: Clock },
     { id: 'projects', label: 'Projects', icon: FolderKanban },
+    { id: 'teams', label: 'Teams', icon: Users2 },
     { id: 'users', label: 'User Management', icon: Users, roleRequirement: 'manager_or_admin' },
     { id: 'settings', label: 'Settings', icon: Settings },
   ]

@@ -28,6 +28,7 @@ export function DashboardLayout() {
     const path = location.pathname.toLowerCase()
     if (path.startsWith('/timetracker')) return 'timetracker'
     if (path.startsWith('/projects')) return 'projects'
+    if (path.startsWith('/teams')) return 'teams'
     if (path.startsWith('/users')) return 'users'
     if (path.startsWith('/settings')) return 'settings'
     return 'overview'
@@ -43,6 +44,7 @@ export function DashboardLayout() {
     overview: 'Overview Dashboard',
     timetracker: 'Time Tracker',
     projects: 'Projects & Workspaces',
+    teams: 'Teams & Departments',
     users: 'User Management',
     settings: 'Account & Application Settings',
   }

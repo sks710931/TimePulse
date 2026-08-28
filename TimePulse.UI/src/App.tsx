@@ -11,6 +11,7 @@ import { DashboardLayout } from './components/layout/DashboardLayout'
 import { OverviewPage } from './pages/OverviewPage'
 import { TimeTrackerPage } from './pages/TimeTrackerPage'
 import { ProjectsPage } from './pages/ProjectsPage'
+import { TeamsPage } from './pages/TeamsPage'
 import { UserManagementPage } from './pages/UserManagementPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { Loader2 } from 'lucide-react'
@@ -81,6 +82,7 @@ function App() {
             <Route path="/overview" element={<OverviewPage />} />
             <Route path="/timetracker" element={<TimeTrackerPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/teams" element={<TeamsPage />} />
             <Route path="/users" element={<UserManagementPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/settings/:subTab" element={<SettingsPage />} />
