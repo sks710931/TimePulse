@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { Loader2 } from 'lucide-react'
 import type { ProjectDto } from '../../api/projectApi'
 import { ProjectsHeader, type StatusFilter } from './ProjectsHeader'
-import { ProjectList } from './ProjectList'
+import { ProjectTable } from './ProjectTable'
 import { CreateProjectModal } from './CreateProjectModal'
 import { EditProjectModal } from './EditProjectModal'
 import { DeleteProjectModal } from './DeleteProjectModal'
@@ -51,37 +51,38 @@ export function ProjectsTab({
   }, [projects, searchQuery, statusFilter])
 
   return (
-    <div className="space-y-6">
-      {/* Header and Toolbar */}
-      <ProjectsHeader
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        onRefresh={onRefresh}
-        isLoading={isLoading}
-        canManage={canManage}
-        onAddNew={() => setIsCreateModalOpen(true)}
-        totalCount={projects.length}
-      />
-
-      {error && <Alert type="error" message={error} />}
-
-      {/* Main List */}
-      {isLoading ? (
-        <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-2">
-          <Loader2 className="w-7 h-7 animate-spin text-indigo-500" />
-          <span className="text-xs">Loading projects...</span>
-        </div>
-      ) : (
-        <ProjectList
-          projects={filteredProjects}
+    <>
+      <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm transition-colors duration-200 space-y-6">
+        {/* Header and Toolbar */}
+        <ProjectsHeader
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          onRefresh={onRefresh}
+          isLoading={isLoading}
           canManage={canManage}
-          onEdit={(p) => setEditingProject(p)}
-          onDelete={(p) => setDeletingProject(p)}
           onAddNew={() => setIsCreateModalOpen(true)}
+          totalCount={projects.length}
         />
-      )}
+
+        {error && <Alert type="error" message={error} />}
+
+        {/* Main Table / States */}
+        {isLoading ? (
+          <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-2">
+            <Loader2 className="w-7 h-7 animate-spin text-indigo-500" />
+            <span className="text-xs">Loading projects...</span>
+          </div>
+        ) : (
+          <ProjectTable
+            projects={filteredProjects}
+            canManage={canManage}
+            onEdit={(p) => setEditingProject(p)}
+            onDelete={(p) => setDeletingProject(p)}
+          />
+        )}
+      </div>
 
       {/* Modals */}
       <CreateProjectModal
@@ -103,6 +104,6 @@ export function ProjectsTab({
         onClose={() => setDeletingProject(null)}
         onProjectDeleted={onRefresh}
       />
-    </div>
+    </>
   )
 }
