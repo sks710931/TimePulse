@@ -18,6 +18,11 @@ public class TeamMemberConfiguration : IEntityTypeConfiguration<TeamMember>
         builder.HasIndex(tm => new { tm.TeamId, tm.UserId })
             .IsUnique();
 
+        builder.HasOne(tm => tm.Team)
+            .WithMany(t => t.Members)
+            .HasForeignKey(tm => tm.TeamId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasOne(tm => tm.User)
             .WithMany()
             .HasForeignKey(tm => tm.UserId)

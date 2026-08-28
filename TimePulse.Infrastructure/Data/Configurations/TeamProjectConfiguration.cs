@@ -18,8 +18,13 @@ public class TeamProjectConfiguration : IEntityTypeConfiguration<TeamProject>
         builder.HasIndex(tp => new { tp.TeamId, tp.ProjectId })
             .IsUnique();
 
+        builder.HasOne(tp => tp.Team)
+            .WithMany(t => t.Projects)
+            .HasForeignKey(tp => tp.TeamId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasOne(tp => tp.Project)
-            .WithMany()
+            .WithMany(p => p.Teams)
             .HasForeignKey(tp => tp.ProjectId)
             .OnDelete(DeleteBehavior.Cascade);
 

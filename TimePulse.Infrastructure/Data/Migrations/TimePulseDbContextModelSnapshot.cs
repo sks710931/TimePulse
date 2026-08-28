@@ -313,7 +313,7 @@ namespace TimePulse.Infrastructure.Data.Migrations
             modelBuilder.Entity("TimePulse.Domain.Entities.TeamProject", b =>
                 {
                     b.HasOne("TimePulse.Domain.Entities.Project", "Project")
-                        .WithMany()
+                        .WithMany("Teams")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -336,6 +336,11 @@ namespace TimePulse.Infrastructure.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("TimePulse.Domain.Entities.Project", b =>
+                {
+                    b.Navigation("Teams");
                 });
 
             modelBuilder.Entity("TimePulse.Domain.Entities.Team", b =>
