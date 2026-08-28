@@ -8,7 +8,7 @@ namespace TimePulse.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = Roles.Admin)]
+[Authorize(Roles = $"{Roles.Admin},{Roles.Manager}")]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -37,6 +37,21 @@ public class UsersController : ControllerBase
         return Ok(user);
     }
 
+    [HttpPost]
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request, CancellationToken cancellationToken)
+    {
+        var isCallerAdmin = User.IsInRole(Roles.Admin);
+        var result = await _userService.CreateUserAsync(request, isCallerAdmin, cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors });
+        }
+
+        return CreatedAtAction(nameof(GetUserById), new { id = result.Data!.Id }, result.Data);
+    }
+
+    [Authorize(Roles = Roles.Admin)]
     [HttpPost("{id:guid}/roles")]
     public async Task<IActionResult> AssignRole(Guid id, [FromBody] AssignRoleRequest request, CancellationToken cancellationToken)
     {
@@ -49,6 +64,7 @@ public class UsersController : ControllerBase
         return Ok(result.Data);
     }
 
+    [Authorize(Roles = Roles.Admin)]
     [HttpDelete("{id:guid}/roles/{role}")]
     public async Task<IActionResult> RemoveRole(Guid id, string role, CancellationToken cancellationToken)
     {

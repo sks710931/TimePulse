@@ -7,6 +7,7 @@ public interface IUserService
 {
     Task<IReadOnlyList<UserDto>> GetAllUsersAsync(CancellationToken cancellationToken = default);
     Task<UserDto?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<Result<UserDto>> CreateUserAsync(CreateUserRequest request, bool isCallerAdmin, CancellationToken cancellationToken = default);
     Task<Result<UserDto>> AssignRoleAsync(Guid userId, string role, CancellationToken cancellationToken = default);
     Task<Result<UserDto>> RemoveRoleAsync(Guid userId, string role, CancellationToken cancellationToken = default);
 }

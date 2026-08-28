@@ -12,13 +12,14 @@ interface NavItemConfig {
   id: TabId
   label: string
   icon: LucideIcon
-  adminOnly?: boolean
+  roleRequirement?: 'admin' | 'manager_or_admin'
 }
 
 interface SidebarNavProps {
   activeTab: TabId
   onSelectTab: (tab: TabId) => void
   isAdmin: boolean
+  isManager: boolean
   isCollapsed: boolean
   onCloseMobile: () => void
 }
@@ -27,13 +28,14 @@ export function SidebarNav({
   activeTab,
   onSelectTab,
   isAdmin,
+  isManager,
   isCollapsed,
   onCloseMobile,
 }: SidebarNavProps) {
   const navItems: NavItemConfig[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'timetracker', label: 'Time Tracker', icon: Clock },
-    { id: 'users', label: 'User Management', icon: Users, adminOnly: true },
+    { id: 'users', label: 'User Management', icon: Users, roleRequirement: 'manager_or_admin' },
     { id: 'settings', label: 'Settings', icon: Settings },
   ]
 
@@ -45,7 +47,9 @@ export function SidebarNav({
   return (
     <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
       {navItems.map((item) => {
-        if (item.adminOnly && !isAdmin) return null
+        if (item.roleRequirement === 'admin' && !isAdmin) return null
+        if (item.roleRequirement === 'manager_or_admin' && !isAdmin && !isManager) return null
+
         const isActive = activeTab === item.id
         const Icon = item.icon
 
@@ -62,9 +66,14 @@ export function SidebarNav({
           >
             <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
             {!isCollapsed && <span className="truncate">{item.label}</span>}
-            {!isCollapsed && item.adminOnly && (
+            {!isCollapsed && item.id === 'users' && isAdmin && (
               <span className="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-700 dark:text-indigo-300">
                 Admin
+              </span>
+            )}
+            {!isCollapsed && item.id === 'users' && !isAdmin && isManager && (
+              <span className="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                Manager
               </span>
             )}
           </button>

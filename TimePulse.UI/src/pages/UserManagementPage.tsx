@@ -1,24 +1,25 @@
 import { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAppSelector } from '../store/hooks'
-import { apiClient } from '../api/apiClient'
+import { userApi, type UserItemDto } from '../api/userApi'
 import { UserManagementTab } from '../components/dashboard/UserManagementTab'
-import type { UserItem } from '../components/dashboard/UserTable'
 
 export function UserManagementPage() {
   const { user } = useAppSelector((state) => state.auth)
-  const isAdmin = Boolean(user?.roles.includes('Admin'))
+  const isAdmin = Boolean(user?.roles.some((r) => r.toLowerCase() === 'admin'))
+  const isManager = Boolean(user?.roles.some((r) => r.toLowerCase() === 'manager'))
+  const canAccess = isAdmin || isManager
 
-  const [users, setUsers] = useState<UserItem[]>([])
+  const [users, setUsers] = useState<UserItemDto[]>([])
   const [usersLoading, setUsersLoading] = useState(false)
   const [usersError, setUsersError] = useState<string | null>(null)
 
   const fetchUsers = async () => {
-    if (!isAdmin) return
+    if (!canAccess) return
     setUsersLoading(true)
     setUsersError(null)
     try {
-      const data = await apiClient.get<UserItem[]>('/api/users')
+      const data = await userApi.getUsers()
       setUsers(data)
     } catch (err: unknown) {
       setUsersError(err instanceof Error ? err.message : 'Error loading users')
@@ -28,12 +29,12 @@ export function UserManagementPage() {
   }
 
   useEffect(() => {
-    if (isAdmin) {
+    if (canAccess) {
       fetchUsers()
     }
-  }, [isAdmin])
+  }, [canAccess])
 
-  if (!isAdmin) {
+  if (!canAccess) {
     return <Navigate to="/overview" replace />
   }
 
@@ -43,6 +44,7 @@ export function UserManagementPage() {
       isLoading={usersLoading}
       error={usersError}
       onRefresh={fetchUsers}
+      isAdmin={isAdmin}
     />
   )
 }

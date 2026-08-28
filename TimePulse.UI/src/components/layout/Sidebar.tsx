@@ -22,7 +22,8 @@ export function Sidebar({
 }: SidebarProps) {
   const { user } = useAppSelector((state) => state.auth)
   const branding = useAppSelector((state) => state.branding)
-  const isAdmin = Boolean(user?.roles.includes('Admin'))
+  const isAdmin = Boolean(user?.roles?.some((r) => r.toLowerCase() === 'admin'))
+  const isManager = Boolean(user?.roles?.some((r) => r.toLowerCase() === 'manager'))
 
   return (
     <>
@@ -52,6 +53,7 @@ export function Sidebar({
           activeTab={activeTab}
           onSelectTab={onSelectTab}
           isAdmin={isAdmin}
+          isManager={isManager}
           isCollapsed={isCollapsed}
           onCloseMobile={onCloseMobile}
         />

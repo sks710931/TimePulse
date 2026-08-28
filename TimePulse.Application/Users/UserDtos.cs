@@ -7,4 +7,10 @@ public record UserDto(
     DateTime CreatedAtUtc,
     IReadOnlyList<string> Roles);
 
+public record CreateUserRequest(
+    string Email,
+    string Password,
+    string FullName,
+    string Role);
+
 public record AssignRoleRequest(string Role);
