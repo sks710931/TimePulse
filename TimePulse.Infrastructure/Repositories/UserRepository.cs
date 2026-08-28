@@ -72,6 +72,20 @@ public class UserRepository : IUserRepository
             .AnyAsync(r => r.Role == Roles.Admin && r.UserId != excludeUserId, cancellationToken);
     }
 
+    public async Task RemoveUserRolesAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var roles = await _context.UserRoles
+            .Where(r => r.UserId == userId)
+            .ToListAsync(cancellationToken);
+
+        _context.UserRoles.RemoveRange(roles);
+    }
+
+    public async Task AddUserRoleAsync(UserRole role, CancellationToken cancellationToken = default)
+    {
+        await _context.UserRoles.AddAsync(role, cancellationToken);
+    }
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);

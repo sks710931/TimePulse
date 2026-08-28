@@ -181,9 +181,21 @@ public class UserService : IUserService
         try
         {
             targetUser.UpdateFullName(request.FullName);
-            targetUser.SetRoles(request.Roles);
+
+            // Use direct DB operations for role updates to avoid EF Core change tracker conflicts
+            await _userRepository.RemoveUserRolesAsync(targetUserId, cancellationToken);
+            foreach (var role in request.Roles)
+            {
+                var normalizedRole = Roles.All.First(r => r.Equals(role, StringComparison.OrdinalIgnoreCase));
+                var userRole = UserRole.Create(targetUserId, normalizedRole);
+                await _userRepository.AddUserRoleAsync(userRole, cancellationToken);
+            }
+
             await _userRepository.SaveChangesAsync(cancellationToken);
-            return Result<UserDto>.Success(MapToDto(targetUser));
+
+            // Reload user to get fresh role data
+            var updatedUser = await _userRepository.GetByIdAsync(targetUserId, cancellationToken);
+            return Result<UserDto>.Success(MapToDto(updatedUser!));
         }
         catch (Exception ex)
         {
