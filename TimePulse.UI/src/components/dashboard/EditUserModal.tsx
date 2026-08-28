@@ -171,7 +171,6 @@ export function EditUserModal({
               {/* Admin Role (Only for Admins) */}
               {isCallerAdmin && (
                 <label
-                  onClick={() => toggleRole('Admin')}
                   className={`p-3 rounded-xl border flex items-start gap-3 transition-all cursor-pointer select-none ${
                     hasRole('Admin')
                       ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/40 ring-1 ring-indigo-500/20'
@@ -181,8 +180,8 @@ export function EditUserModal({
                   <input
                     type="checkbox"
                     checked={hasRole('Admin')}
-                    onChange={() => {}} // Handled by parent label click
-                    className="mt-0.5 w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 pointer-events-none"
+                    onChange={() => toggleRole('Admin')}
+                    className="mt-0.5 w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
@@ -201,11 +200,6 @@ export function EditUserModal({
               {/* Manager Role */}
               {(isCallerAdmin || (isSelfEdit && hasRole('Manager'))) && (
                 <label
-                  onClick={() => {
-                    if (isCallerAdmin) {
-                      toggleRole('Manager')
-                    }
-                  }}
                   className={`p-3 rounded-xl border flex items-start gap-3 transition-all ${
                     isCallerAdmin ? 'cursor-pointer select-none' : 'cursor-default opacity-80'
                   } ${
@@ -218,8 +212,12 @@ export function EditUserModal({
                     type="checkbox"
                     checked={hasRole('Manager')}
                     disabled={!isCallerAdmin}
-                    onChange={() => {}}
-                    className="mt-0.5 w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-300 pointer-events-none"
+                    onChange={() => {
+                      if (isCallerAdmin) {
+                        toggleRole('Manager')
+                      }
+                    }}
+                    className="mt-0.5 w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer disabled:cursor-not-allowed"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
@@ -237,7 +235,6 @@ export function EditUserModal({
 
               {/* Employee Role */}
               <label
-                onClick={() => toggleRole('Employee')}
                 className={`p-3 rounded-xl border flex items-start gap-3 transition-all cursor-pointer select-none ${
                   hasRole('Employee')
                     ? 'border-sky-600 dark:border-sky-500 bg-sky-50/50 dark:bg-sky-950/40 ring-1 ring-sky-500/20'
@@ -247,8 +244,8 @@ export function EditUserModal({
                 <input
                   type="checkbox"
                   checked={hasRole('Employee')}
-                  onChange={() => {}}
-                  className="mt-0.5 w-4 h-4 rounded text-sky-600 focus:ring-sky-500 border-slate-300 pointer-events-none"
+                  onChange={() => toggleRole('Employee')}
+                  className="mt-0.5 w-4 h-4 rounded text-sky-600 focus:ring-sky-500 border-slate-300 cursor-pointer"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
