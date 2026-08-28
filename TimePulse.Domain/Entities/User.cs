@@ -39,6 +39,47 @@ public class User : AggregateRoot<Guid>
         return user;
     }
 
+    public void UpdateFullName(string fullName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fullName);
+        FullName = fullName.Trim();
+    }
+
+    public void SetRoles(IEnumerable<string> roles)
+    {
+        ArgumentNullException.ThrowIfNull(roles);
+
+        var validRoles = new List<string>();
+        foreach (var role in roles)
+        {
+            if (!string.IsNullOrWhiteSpace(role) && Constants.Roles.IsValid(role))
+            {
+                var normalizedRole = Constants.Roles.All.First(r => r.Equals(role, StringComparison.OrdinalIgnoreCase));
+                if (!validRoles.Contains(normalizedRole))
+                {
+                    validRoles.Add(normalizedRole);
+                }
+            }
+        }
+
+        if (validRoles.Count == 0)
+        {
+            throw new DomainException("A user must have at least one valid role.");
+        }
+
+        // Remove roles not in new list
+        _roles.RemoveAll(r => !validRoles.Any(vr => vr.Equals(r.Role, StringComparison.OrdinalIgnoreCase)));
+
+        // Add new roles not already present
+        foreach (var validRole in validRoles)
+        {
+            if (!_roles.Any(r => r.Role.Equals(validRole, StringComparison.OrdinalIgnoreCase)))
+            {
+                _roles.Add(UserRole.Create(Id, validRole));
+            }
+        }
+    }
+
     public void AddRole(string role)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(role);

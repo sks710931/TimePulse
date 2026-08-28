@@ -13,4 +13,8 @@ public record CreateUserRequest(
     string FullName,
     string Role);
 
+public record UpdateUserRequest(
+    string FullName,
+    IReadOnlyList<string> Roles);
+
 public record AssignRoleRequest(string Role);

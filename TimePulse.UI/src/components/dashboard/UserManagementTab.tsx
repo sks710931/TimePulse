@@ -1,15 +1,19 @@
 import { useState } from 'react'
-import { UserTable, type UserItem } from './UserTable'
+import { UserTable } from './UserTable'
 import { CreateUserModal } from './CreateUserModal'
+import { EditUserModal } from './EditUserModal'
 import { Alert } from '../common/Alert'
 import { Users, UserPlus, RefreshCw, Loader2 } from 'lucide-react'
+import type { UserItemDto } from '../../api/userApi'
 
 interface UserManagementTabProps {
-  users: UserItem[]
+  users: UserItemDto[]
   isLoading: boolean
   error: string | null
   onRefresh: () => void
   isAdmin: boolean
+  isManager: boolean
+  currentUserId?: string
 }
 
 export function UserManagementTab({
@@ -18,8 +22,15 @@ export function UserManagementTab({
   error,
   onRefresh,
   isAdmin,
+  isManager,
+  currentUserId,
 }: UserManagementTabProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [editingUser, setEditingUser] = useState<UserItemDto | null>(null)
+
+  const handleEditUser = (user: UserItemDto) => {
+    setEditingUser(user)
+  }
 
   return (
     <>
@@ -36,8 +47,8 @@ export function UserManagementTab({
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {isAdmin
-                  ? 'Manage organizational accounts, assign roles, and add new team members.'
-                  : 'Manage team employee accounts and add new employees.'}
+                  ? 'Manage organizational accounts, assign multiple roles, and edit team members.'
+                  : 'Manage team employee accounts, edit profiles, and add new employees.'}
               </p>
             </div>
           </div>
@@ -53,7 +64,7 @@ export function UserManagementTab({
             </button>
 
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => setIsCreateModalOpen(true)}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
@@ -75,16 +86,33 @@ export function UserManagementTab({
             No users found. Click &quot;Add User&quot; to create the first account.
           </div>
         ) : (
-          <UserTable users={users} />
+          <UserTable
+            users={users}
+            onEditUser={handleEditUser}
+            isCallerAdmin={isAdmin}
+            isCallerManager={isManager}
+            currentUserId={currentUserId}
+          />
         )}
       </div>
 
       {/* Add User Modal */}
       <CreateUserModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
         onUserCreated={onRefresh}
         isAdmin={isAdmin}
+      />
+
+      {/* Edit User Modal */}
+      <EditUserModal
+        isOpen={Boolean(editingUser)}
+        user={editingUser}
+        onClose={() => setEditingUser(null)}
+        onUserUpdated={onRefresh}
+        isCallerAdmin={isAdmin}
+        isCallerManager={isManager}
+        currentUserId={currentUserId}
       />
     </>
   )

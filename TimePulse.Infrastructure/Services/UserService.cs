@@ -90,6 +90,104 @@ public class UserService : IUserService
         }
     }
 
+    public async Task<Result<UserDto>> UpdateUserAsync(
+        Guid targetUserId,
+        UpdateUserRequest request,
+        Guid callerUserId,
+        bool isCallerAdmin,
+        bool isCallerManager,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.FullName))
+        {
+            return Result<UserDto>.Failure("Full name is required.");
+        }
+
+        if (request.Roles is null || request.Roles.Count == 0)
+        {
+            return Result<UserDto>.Failure("User must be assigned at least one role.");
+        }
+
+        foreach (var role in request.Roles)
+        {
+            if (!Roles.IsValid(role))
+            {
+                return Result<UserDto>.Failure($"Invalid role: '{role}'.");
+            }
+        }
+
+        var targetUser = await _userRepository.GetByIdAsync(targetUserId, cancellationToken);
+        if (targetUser is null)
+        {
+            return Result<UserDto>.Failure("User not found.");
+        }
+
+        var isSelfEdit = targetUserId == callerUserId;
+
+        // RBAC Permissions:
+        if (isCallerAdmin)
+        {
+            // Admins can edit Admins, Managers, Employees, can assign Admin roles to others, and can take Manager role to themselves.
+            // Safety Check: If target has Admin and new roles remove Admin, ensure at least one other Admin exists.
+            var willHaveAdmin = request.Roles.Any(r => r.Equals(Roles.Admin, StringComparison.OrdinalIgnoreCase));
+            if (targetUser.HasRole(Roles.Admin) && !willHaveAdmin)
+            {
+                var allUsers = await _userRepository.GetAllAsync(cancellationToken);
+                var otherAdminCount = allUsers.Count(u => u.Id != targetUserId && u.HasRole(Roles.Admin));
+                if (otherAdminCount == 0)
+                {
+                    return Result<UserDto>.Failure("Cannot remove the Admin role from the only remaining system administrator.");
+                }
+            }
+        }
+        else if (isCallerManager)
+        {
+            // Managers can only edit themselves and employees
+            if (!isSelfEdit)
+            {
+                // Target must NOT be an Admin or Manager
+                if (targetUser.HasRole(Roles.Admin) || targetUser.HasRole(Roles.Manager))
+                {
+                    return Result<UserDto>.Failure("Managers are only permitted to edit themselves and Employees.");
+                }
+
+                // When editing an Employee, Manager cannot assign Admin or Manager roles
+                var hasDisallowedRole = request.Roles.Any(r =>
+                    r.Equals(Roles.Admin, StringComparison.OrdinalIgnoreCase) ||
+                    r.Equals(Roles.Manager, StringComparison.OrdinalIgnoreCase));
+
+                if (hasDisallowedRole)
+                {
+                    return Result<UserDto>.Failure("Managers cannot assign Admin or Manager roles to other users.");
+                }
+            }
+            else
+            {
+                // Manager editing themselves: cannot promote themselves to Admin
+                if (request.Roles.Any(r => r.Equals(Roles.Admin, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return Result<UserDto>.Failure("Managers cannot assign the Admin role to themselves.");
+                }
+            }
+        }
+        else
+        {
+            return Result<UserDto>.Failure("Unauthorized to edit users.");
+        }
+
+        try
+        {
+            targetUser.UpdateFullName(request.FullName);
+            targetUser.SetRoles(request.Roles);
+            await _userRepository.SaveChangesAsync(cancellationToken);
+            return Result<UserDto>.Success(MapToDto(targetUser));
+        }
+        catch (Exception ex)
+        {
+            return Result<UserDto>.Failure(ex.Message);
+        }
+    }
+
     public async Task<Result<UserDto>> AssignRoleAsync(Guid userId, string role, CancellationToken cancellationToken = default)
     {
         if (!Roles.IsValid(role))

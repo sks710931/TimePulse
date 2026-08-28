@@ -45,6 +45,8 @@ export function UserManagementPage() {
       error={usersError}
       onRefresh={fetchUsers}
       isAdmin={isAdmin}
+      isManager={isManager}
+      currentUserId={user?.id}
     />
   )
 }

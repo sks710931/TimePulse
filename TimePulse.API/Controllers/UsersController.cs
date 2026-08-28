@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TimePulse.Application.Common.Interfaces;
@@ -49,6 +50,27 @@ public class UsersController : ControllerBase
         }
 
         return CreatedAtAction(nameof(GetUserById), new { id = result.Data!.Id }, result.Data);
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
+    {
+        var callerUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+        if (!Guid.TryParse(callerUserIdStr, out var callerUserId))
+        {
+            return Unauthorized(new { error = "Invalid user identity." });
+        }
+
+        var isCallerAdmin = User.IsInRole(Roles.Admin);
+        var isCallerManager = User.IsInRole(Roles.Manager);
+
+        var result = await _userService.UpdateUserAsync(id, request, callerUserId, isCallerAdmin, isCallerManager, cancellationToken);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors });
+        }
+
+        return Ok(result.Data);
     }
 
     [Authorize(Roles = Roles.Admin)]
