@@ -1,15 +1,18 @@
 import { useState, useMemo } from 'react'
 import { Loader2 } from 'lucide-react'
 import type { ProjectDto } from '../../api/projectApi'
+import type { TeamDto } from '../../api/teamApi'
 import { ProjectsHeader, type StatusFilter } from './ProjectsHeader'
 import { ProjectTable } from './ProjectTable'
 import { CreateProjectModal } from './CreateProjectModal'
 import { EditProjectModal } from './EditProjectModal'
+import { ManageProjectTeamsModal } from './ManageProjectTeamsModal'
 import { DeleteProjectModal } from './DeleteProjectModal'
 import { Alert } from '../common/Alert'
 
 interface ProjectsTabProps {
   projects: ProjectDto[]
+  allTeams: TeamDto[]
   isLoading: boolean
   error: string | null
   onRefresh: () => void
@@ -18,6 +21,7 @@ interface ProjectsTabProps {
 
 export function ProjectsTab({
   projects,
+  allTeams,
   isLoading,
   error,
   onRefresh,
@@ -27,18 +31,20 @@ export function ProjectsTab({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<ProjectDto | null>(null)
+  const [managingTeamsProject, setManagingTeamsProject] = useState<ProjectDto | null>(null)
   const [deletingProject, setDeletingProject] = useState<ProjectDto | null>(null)
 
   // Filtered projects
   const filteredProjects = useMemo(() => {
     return projects.filter((p) => {
-      // Search matching
+      const q = searchQuery.toLowerCase().trim()
       const matchesSearch =
-        searchQuery.trim() === '' ||
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.code && p.code.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (p.clientName && p.clientName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()))
+        q === '' ||
+        p.name.toLowerCase().includes(q) ||
+        (p.code && p.code.toLowerCase().includes(q)) ||
+        (p.clientName && p.clientName.toLowerCase().includes(q)) ||
+        (p.description && p.description.toLowerCase().includes(q)) ||
+        (p.teams && p.teams.some((t) => t.name.toLowerCase().includes(q)))
 
       // Status filter
       const matchesStatus =
@@ -80,6 +86,7 @@ export function ProjectsTab({
             canManage={canManage}
             onEdit={(p) => setEditingProject(p)}
             onDelete={(p) => setDeletingProject(p)}
+            onManageTeams={(p) => setManagingTeamsProject(p)}
           />
         )}
       </div>
@@ -96,6 +103,14 @@ export function ProjectsTab({
         project={editingProject}
         onClose={() => setEditingProject(null)}
         onProjectUpdated={onRefresh}
+      />
+
+      <ManageProjectTeamsModal
+        isOpen={Boolean(managingTeamsProject)}
+        project={managingTeamsProject}
+        allTeams={allTeams}
+        onClose={() => setManagingTeamsProject(null)}
+        onTeamsUpdated={onRefresh}
       />
 
       <DeleteProjectModal

@@ -1,4 +1,4 @@
-import { Edit2, Trash2, Building2, Hash } from 'lucide-react'
+import { Edit2, Trash2, Building2, Hash, Users2 } from 'lucide-react'
 import type { ProjectDto } from '../../api/projectApi'
 import { ProjectStatusBadge } from './ProjectStatusBadge'
 
@@ -7,6 +7,7 @@ interface ProjectTableProps {
   canManage: boolean
   onEdit: (project: ProjectDto) => void
   onDelete: (project: ProjectDto) => void
+  onManageTeams?: (project: ProjectDto) => void
 }
 
 export function ProjectTable({
@@ -14,6 +15,7 @@ export function ProjectTable({
   canManage,
   onEdit,
   onDelete,
+  onManageTeams,
 }: ProjectTableProps) {
   if (projects.length === 0) {
     return (
@@ -31,6 +33,7 @@ export function ProjectTable({
             <th className="px-4 py-3">Project</th>
             <th className="px-4 py-3">Code</th>
             <th className="px-4 py-3">Client</th>
+            <th className="px-4 py-3">Assigned Teams</th>
             <th className="px-4 py-3">Status</th>
             <th className="px-4 py-3">Created Date</th>
             {canManage && <th className="px-4 py-3 text-right">Actions</th>}
@@ -40,6 +43,7 @@ export function ProjectTable({
           {projects.map((p) => {
             const accentColor = p.colorHex || '#4F46E5'
             const initial = p.name.charAt(0).toUpperCase()
+            const projectTeams = p.teams || []
 
             return (
               <tr
@@ -92,6 +96,32 @@ export function ProjectTable({
                   )}
                 </td>
 
+                {/* Assigned Teams */}
+                <td className="px-4 py-3.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {projectTeams.length > 0 ? (
+                      projectTeams.slice(0, 2).map((t) => (
+                        <span
+                          key={t.teamId}
+                          title={`${t.name} (${t.memberCount} members)`}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
+                        >
+                          <Users2 className="w-3 h-3 text-indigo-500 shrink-0" />
+                          <span className="truncate max-w-[100px]">{t.name}</span>
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-slate-400 text-xs italic">No teams assigned</span>
+                    )}
+
+                    {projectTeams.length > 2 && (
+                      <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                        +{projectTeams.length - 2} more
+                      </span>
+                    )}
+                  </div>
+                </td>
+
                 {/* Status Badge */}
                 <td className="px-4 py-3.5">
                   <ProjectStatusBadge isActive={p.isActive} />
@@ -106,6 +136,17 @@ export function ProjectTable({
                 {canManage && (
                   <td className="px-4 py-3.5 text-right">
                     <div className="inline-flex items-center gap-1.5">
+                      {onManageTeams && (
+                        <button
+                          onClick={() => onManageTeams(p)}
+                          title="Manage Teams"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-indigo-950/40 text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-300 rounded-lg text-xs font-semibold transition-all border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 cursor-pointer"
+                        >
+                          <Users2 className="w-3.5 h-3.5" />
+                          <span>Teams</span>
+                        </button>
+                      )}
+
                       <button
                         onClick={() => onEdit(p)}
                         title={`Edit ${p.name}`}

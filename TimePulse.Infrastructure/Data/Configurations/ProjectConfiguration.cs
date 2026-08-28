@@ -37,6 +37,14 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
 
         builder.Property(p => p.UpdatedAtUtc);
 
+        builder.HasMany(p => p.Teams)
+            .WithOne(tp => tp.Project)
+            .HasForeignKey(tp => tp.ProjectId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(p => p.Teams)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
         builder.Ignore(p => p.DomainEvents);
     }
 }

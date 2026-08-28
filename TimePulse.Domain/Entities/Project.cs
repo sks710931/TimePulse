@@ -13,6 +13,9 @@ public class Project : AggregateRoot<Guid>
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime? UpdatedAtUtc { get; private set; }
 
+    private readonly List<TeamProject> _teams = [];
+    public IReadOnlyCollection<TeamProject> Teams => _teams.AsReadOnly();
+
     private Project() { } // EF Core
 
     public static Project Create(

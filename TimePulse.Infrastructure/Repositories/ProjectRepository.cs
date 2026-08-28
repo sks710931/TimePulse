@@ -18,6 +18,9 @@ public class ProjectRepository : IProjectRepository
     {
         return await _context.Projects
             .AsNoTracking()
+            .Include(p => p.Teams)
+                .ThenInclude(tp => tp.Team)
+                    .ThenInclude(t => t!.Members)
             .OrderByDescending(p => p.CreatedAtUtc)
             .ToListAsync(cancellationToken);
     }
@@ -25,6 +28,9 @@ public class ProjectRepository : IProjectRepository
     public async Task<Project?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Projects
+            .Include(p => p.Teams)
+                .ThenInclude(tp => tp.Team)
+                    .ThenInclude(t => t!.Members)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
@@ -47,6 +53,21 @@ public class ProjectRepository : IProjectRepository
     {
         _context.Projects.Remove(project);
         return Task.CompletedTask;
+    }
+
+    public async Task SetTeamsAsync(Guid projectId, IEnumerable<Guid> teamIds, CancellationToken cancellationToken = default)
+    {
+        var existing = await _context.TeamProjects
+            .Where(tp => tp.ProjectId == projectId)
+            .ToListAsync(cancellationToken);
+
+        _context.TeamProjects.RemoveRange(existing);
+
+        foreach (var teamId in teamIds.Distinct())
+        {
+            var teamProject = TeamProject.Create(teamId, projectId);
+            await _context.TeamProjects.AddAsync(teamProject, cancellationToken);
+        }
     }
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)

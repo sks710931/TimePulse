@@ -75,4 +75,17 @@ public class ProjectsController : ControllerBase
 
         return Ok(new { success = true });
     }
+
+    [HttpPut("{id:guid}/teams")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.Manager}")]
+    public async Task<IActionResult> SetProjectTeams(Guid id, [FromBody] SetProjectTeamsRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _projectService.SetProjectTeamsAsync(id, request, cancellationToken);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors });
+        }
+
+        return Ok(result.Data);
+    }
 }

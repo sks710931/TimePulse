@@ -1,5 +1,13 @@
 namespace TimePulse.Application.Projects;
 
+public record ProjectTeamDto(
+    Guid TeamId,
+    string Name,
+    string? Description,
+    string? ColorHex,
+    int MemberCount,
+    DateTime AssignedAtUtc);
+
 public record ProjectDto(
     Guid Id,
     string Name,
@@ -9,7 +17,8 @@ public record ProjectDto(
     string? ColorHex,
     bool IsActive,
     DateTime CreatedAtUtc,
-    DateTime? UpdatedAtUtc);
+    DateTime? UpdatedAtUtc,
+    IReadOnlyList<ProjectTeamDto> Teams);
 
 public record CreateProjectRequest(
     string Name,
@@ -17,7 +26,8 @@ public record CreateProjectRequest(
     string? Description,
     string? ClientName,
     string? ColorHex,
-    bool IsActive = true);
+    bool IsActive = true,
+    IReadOnlyList<Guid>? TeamIds = null);
 
 public record UpdateProjectRequest(
     string Name,
@@ -26,3 +36,6 @@ public record UpdateProjectRequest(
     string? ClientName,
     string? ColorHex,
     bool IsActive);
+
+public record SetProjectTeamsRequest(
+    IReadOnlyList<Guid> TeamIds);

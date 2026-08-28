@@ -51,7 +51,15 @@ public class ProjectService : IProjectService
         {
             await _projectRepository.AddAsync(project, cancellationToken);
             await _projectRepository.SaveChangesAsync(cancellationToken);
-            return Result<ProjectDto>.Success(MapToDto(project));
+
+            if (request.TeamIds is not null && request.TeamIds.Count > 0)
+            {
+                await _projectRepository.SetTeamsAsync(project.Id, request.TeamIds, cancellationToken);
+                await _projectRepository.SaveChangesAsync(cancellationToken);
+            }
+
+            var loadedProject = await _projectRepository.GetByIdAsync(project.Id, cancellationToken);
+            return Result<ProjectDto>.Success(MapToDto(loadedProject!));
         }
         catch (Exception ex)
         {
@@ -88,7 +96,9 @@ public class ProjectService : IProjectService
                 request.IsActive);
 
             await _projectRepository.SaveChangesAsync(cancellationToken);
-            return Result<ProjectDto>.Success(MapToDto(project));
+
+            var loadedProject = await _projectRepository.GetByIdAsync(id, cancellationToken);
+            return Result<ProjectDto>.Success(MapToDto(loadedProject!));
         }
         catch (Exception ex)
         {
@@ -116,6 +126,28 @@ public class ProjectService : IProjectService
         }
     }
 
+    public async Task<Result<ProjectDto>> SetProjectTeamsAsync(Guid id, SetProjectTeamsRequest request, CancellationToken cancellationToken = default)
+    {
+        var project = await _projectRepository.GetByIdAsync(id, cancellationToken);
+        if (project is null)
+        {
+            return Result<ProjectDto>.Failure("Project not found.");
+        }
+
+        try
+        {
+            await _projectRepository.SetTeamsAsync(id, request.TeamIds, cancellationToken);
+            await _projectRepository.SaveChangesAsync(cancellationToken);
+
+            var loadedProject = await _projectRepository.GetByIdAsync(id, cancellationToken);
+            return Result<ProjectDto>.Success(MapToDto(loadedProject!));
+        }
+        catch (Exception ex)
+        {
+            return Result<ProjectDto>.Failure(ex.Message);
+        }
+    }
+
     private static ProjectDto MapToDto(Project p) =>
         new(
             p.Id,
@@ -126,5 +158,13 @@ public class ProjectService : IProjectService
             p.ColorHex,
             p.IsActive,
             p.CreatedAtUtc,
-            p.UpdatedAtUtc);
+            p.UpdatedAtUtc,
+            p.Teams.Select(tp => new ProjectTeamDto(
+                tp.TeamId,
+                tp.Team?.Name ?? string.Empty,
+                tp.Team?.Description,
+                tp.Team?.ColorHex,
+                tp.Team?.Members.Count ?? 0,
+                tp.AssignedAtUtc
+            )).ToList());
 }
