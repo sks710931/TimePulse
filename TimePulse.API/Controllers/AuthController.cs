@@ -21,20 +21,6 @@ public class AuthController : ControllerBase
         _configuration = configuration;
     }
 
-    [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
-    {
-        var result = await _authService.RegisterAsync(request, cancellationToken);
-
-        if (!result.Succeeded)
-        {
-            return BadRequest(new { error = result.Error });
-        }
-
-        SetTokenCookies(result);
-        return Ok(new { message = "Registration successful." });
-    }
-
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {

@@ -13,12 +13,6 @@ export interface LoginPayload {
   password: string
 }
 
-export interface RegisterPayload {
-  email: string
-  password: string
-  fullName: string
-}
-
 export const authApi = {
   async getMe(): Promise<UserProfile> {
     const res = await apiFetch('/api/auth/me')
@@ -43,20 +37,6 @@ export const authApi = {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
       throw new Error(data.error || 'Invalid email or password')
-    }
-    return res.json()
-  },
-
-  async register(payload: RegisterPayload): Promise<{ message: string }> {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      credentials: 'include',
-    })
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      throw new Error(data.error || 'Registration failed')
     }
     return res.json()
   },
