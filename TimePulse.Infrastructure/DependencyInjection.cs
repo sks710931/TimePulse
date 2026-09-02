@@ -46,6 +46,7 @@ public static class DependencyInjection
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<IUserInvitationRepository, UserInvitationRepository>();
+        services.AddScoped<ITimeEntryRepository, TimeEntryRepository>();
 
         // Services
         services.AddScoped<ITokenService, TokenService>();
@@ -55,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<IProjectService, ProjectService>();
         services.AddScoped<ITeamService, TeamService>();
         services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<ITimeEntryService, TimeEntryService>();
 
         return services;
     }

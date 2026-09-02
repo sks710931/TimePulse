@@ -1,0 +1,285 @@
+import { useState, useEffect, useRef } from 'react'
+import { Tag, DollarSign, Calendar, Loader2 } from 'lucide-react'
+import { ProjectPickerDropdown } from './ProjectPickerDropdown'
+import type { ProjectDto } from '../../api/projectApi'
+import type { CreateTimeEntryPayload } from '../../api/timeEntryApi'
+
+interface ManualEntryBarProps {
+  projects: ProjectDto[]
+  onAddEntry: (payload: CreateTimeEntryPayload) => Promise<void>
+  initialData?: {
+    description?: string
+    projectId?: string | null
+    isBillable?: boolean
+    tag?: string | null
+  } | null
+}
+
+export function ManualEntryBar({
+  projects,
+  onAddEntry,
+  initialData,
+}: ManualEntryBarProps) {
+  const [description, setDescription] = useState('')
+  const [projectId, setProjectId] = useState<string | null>(null)
+  const [isBillable, setIsBillable] = useState(false)
+  const [tag, setTag] = useState<string>('')
+  const [isTagPopoverOpen, setIsTagPopoverOpen] = useState(false)
+
+  // Today formatted as YYYY-MM-DD for date input
+  const getTodayDateString = () => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+
+  const [dateStr, setDateStr] = useState(getTodayDateString())
+  const [startTimeStr, setStartTimeStr] = useState('09:00')
+  const [endTimeStr, setEndTimeStr] = useState('10:00')
+  const [durationStr, setDurationStr] = useState('01:00:00')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const tagRef = useRef<HTMLDivElement>(null)
+
+  // Listen to initialData changes (e.g. when user clicks Duplicate/Play on an entry)
+  useEffect(() => {
+    if (initialData) {
+      if (initialData.description !== undefined) setDescription(initialData.description)
+      if (initialData.projectId !== undefined) setProjectId(initialData.projectId)
+      if (initialData.isBillable !== undefined) setIsBillable(initialData.isBillable)
+      if (initialData.tag !== undefined) setTag(initialData.tag || '')
+    }
+  }, [initialData])
+
+  // Click outside to close tag popover
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (tagRef.current && !tagRef.current.contains(e.target as Node)) {
+        setIsTagPopoverOpen(false)
+      }
+    }
+    if (isTagPopoverOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isTagPopoverOpen])
+
+  // Recalculate duration whenever start or end time changes
+  useEffect(() => {
+    const [startH, startM] = startTimeStr.split(':').map(Number)
+    const [endH, endM] = endTimeStr.split(':').map(Number)
+
+    if (!isNaN(startH) && !isNaN(startM) && !isNaN(endH) && !isNaN(endM)) {
+      let diffMinutes = endH * 60 + endM - (startH * 60 + startM)
+      if (diffMinutes < 0) diffMinutes = 0 // same-day constraint
+
+      const hrs = Math.floor(diffMinutes / 60)
+      const mins = diffMinutes % 60
+      setDurationStr(`${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:00`)
+    }
+  }, [startTimeStr, endTimeStr])
+
+  const handleDurationChange = (newDurationStr: string) => {
+    setDurationStr(newDurationStr)
+    const parts = newDurationStr.split(':').map(Number)
+    let totalMinutes = 0
+
+    if (parts.length === 3 && !parts.some(isNaN)) {
+      totalMinutes = parts[0] * 60 + parts[1] + Math.round(parts[2] / 60)
+    } else if (parts.length === 2 && !parts.some(isNaN)) {
+      totalMinutes = parts[0] * 60 + parts[1]
+    } else {
+      const num = parseInt(newDurationStr, 10)
+      if (!isNaN(num)) totalMinutes = num
+    }
+
+    if (totalMinutes >= 0) {
+      const [startH, startM] = startTimeStr.split(':').map(Number)
+      if (!isNaN(startH) && !isNaN(startM)) {
+        const endTotal = startH * 60 + startM + totalMinutes
+        const endH = Math.min(23, Math.floor(endTotal / 60))
+        const endM = endTotal % 60
+        setEndTimeStr(`${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`)
+      }
+    }
+  }
+
+  const handleAdd = async () => {
+    const [year, month, day] = dateStr.split('-').map(Number)
+    const [startH, startM] = startTimeStr.split(':').map(Number)
+    const [endH, endM] = endTimeStr.split(':').map(Number)
+
+    const start = new Date(Date.UTC(year, month - 1, day, startH, startM, 0))
+    let end = new Date(Date.UTC(year, month - 1, day, endH, endM, 0))
+
+    if (end < start) {
+      end = start
+    }
+
+    setIsSubmitting(true)
+    try {
+      await onAddEntry({
+        description: description.trim(),
+        projectId,
+        isBillable,
+        tag: tag.trim() || null,
+        startTimeUtc: start.toISOString(),
+        endTimeUtc: end.toISOString(),
+      })
+
+      // Reset description after add
+      setDescription('')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 sm:p-4 shadow-sm text-white">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        {/* Description & Project & Tag & Billable */}
+        <div className="flex-1 flex flex-wrap items-center gap-2.5 min-w-0">
+          <input
+            type="text"
+            placeholder="What have you worked on?"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                handleAdd()
+              }
+            }}
+            className="flex-1 min-w-[200px] bg-transparent text-sm text-white placeholder-slate-400 focus:outline-none px-2 py-1.5"
+          />
+
+          {/* Project Picker */}
+          <ProjectPickerDropdown
+            projects={projects}
+            selectedProjectId={projectId}
+            onSelectProject={setProjectId}
+            disabled={isSubmitting}
+          />
+
+          {/* Tag Selector Popover */}
+          <div className="relative" ref={tagRef}>
+            <button
+              type="button"
+              onClick={() => setIsTagPopoverOpen(!isTagPopoverOpen)}
+              title={tag ? `Tag: ${tag}` : 'Add Tag'}
+              className={`p-2 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
+                tag
+                  ? 'bg-purple-950/60 text-purple-300 border border-purple-800/80'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-transparent'
+              }`}
+            >
+              <Tag className="w-4 h-4" />
+              {tag && <span className="max-w-[70px] truncate text-[11px]">{tag}</span>}
+            </button>
+
+            {isTagPopoverOpen && (
+              <div className="absolute left-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-xl p-2.5 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="text-[11px] text-slate-300 font-semibold mb-1.5">Enter Tag:</div>
+                <input
+                  type="text"
+                  placeholder="e.g. Design, Meeting"
+                  value={tag}
+                  onChange={(e) => setTag(e.target.value)}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') setIsTagPopoverOpen(false)
+                  }}
+                  className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                />
+                <div className="mt-2 flex items-center justify-end gap-1.5">
+                  {tag && (
+                    <button
+                      type="button"
+                      onClick={() => setTag('')}
+                      className="px-2 py-1 text-[10px] text-slate-400 hover:text-rose-400"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsTagPopoverOpen(false)}
+                    className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-[10px] font-bold"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Billable Toggle Button ($) */}
+          <button
+            type="button"
+            onClick={() => setIsBillable(!isBillable)}
+            title={isBillable ? 'Billable (Click to toggle)' : 'Non-billable (Click to make billable)'}
+            className={`p-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              isBillable
+                ? 'bg-sky-950/60 text-sky-400 border border-sky-800 shadow-xs'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800 border border-transparent'
+            }`}
+          >
+            <DollarSign className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Time, Date, Duration & ADD Button */}
+        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-800">
+          {/* Time range: 10:40 - 11:40 */}
+          <div className="flex items-center gap-1.5 text-xs text-slate-300 font-mono bg-slate-950/60 px-2.5 py-1.5 rounded-lg border border-slate-800">
+            <input
+              type="time"
+              value={startTimeStr}
+              onChange={(e) => setStartTimeStr(e.target.value)}
+              className="bg-transparent text-white focus:outline-none w-[54px] cursor-pointer"
+            />
+            <span className="text-slate-500">-</span>
+            <input
+              type="time"
+              value={endTimeStr}
+              onChange={(e) => setEndTimeStr(e.target.value)}
+              className="bg-transparent text-white focus:outline-none w-[54px] cursor-pointer"
+            />
+          </div>
+
+          {/* Date Picker (Calendar + Today/Date) */}
+          <div className="relative flex items-center gap-1 text-xs text-slate-300 bg-slate-950/60 px-2.5 py-1.5 rounded-lg border border-slate-800">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <input
+              type="date"
+              value={dateStr}
+              onChange={(e) => setDateStr(e.target.value)}
+              className="bg-transparent text-white focus:outline-none text-xs cursor-pointer"
+            />
+          </div>
+
+          {/* Duration Display: 01:00:00 */}
+          <input
+            type="text"
+            value={durationStr}
+            onChange={(e) => handleDurationChange(e.target.value)}
+            title="Duration (hh:mm:ss)"
+            className="w-20 px-2 py-1.5 text-center font-mono font-bold text-sm bg-transparent text-white focus:outline-none focus:bg-slate-800 rounded-lg"
+          />
+
+          {/* ADD Button */}
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={isSubmitting}
+            className="px-5 py-2 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer uppercase tracking-wider"
+          >
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <span>ADD</span>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
