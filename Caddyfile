@@ -1,8 +1,8 @@
 {
-    auto_https disable_redirects
+	auto_https disable_redirects
 }
 
 :7001 {
-    tls internal
-    reverse_proxy timepulse:7001
+	tls internal
+	reverse_proxy timepulse:7001
 }
