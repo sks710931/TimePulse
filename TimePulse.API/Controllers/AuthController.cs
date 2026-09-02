@@ -157,14 +157,12 @@ public class AuthController : ControllerBase
     private void SetTokenCookies(AuthResult result)
     {
         var refreshDays = int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
-        var forceSecure = _configuration.GetValue<bool?>("Cookie:Secure", null);
-        var isSecure = forceSecure ?? Request.IsHttps;
 
         Response.Cookies.Append(AccessTokenCookie, result.AccessToken, new CookieOptions
         {
             HttpOnly = true,
-            Secure = isSecure,
-            SameSite = SameSiteMode.Lax,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
             Path = "/",
             MaxAge = TimeSpan.FromDays(refreshDays)
         });
@@ -172,8 +170,8 @@ public class AuthController : ControllerBase
         Response.Cookies.Append(RefreshTokenCookie, result.RefreshToken, new CookieOptions
         {
             HttpOnly = true,
-            Secure = isSecure,
-            SameSite = SameSiteMode.Lax,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
             Path = "/api/auth",
             MaxAge = TimeSpan.FromDays(refreshDays)
         });
@@ -181,22 +179,19 @@ public class AuthController : ControllerBase
 
     private void ClearTokenCookies()
     {
-        var forceSecure = _configuration.GetValue<bool?>("Cookie:Secure", null);
-        var isSecure = forceSecure ?? Request.IsHttps;
-
         Response.Cookies.Delete(AccessTokenCookie, new CookieOptions
         {
             HttpOnly = true,
-            Secure = isSecure,
-            SameSite = SameSiteMode.Lax,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
             Path = "/"
         });
 
         Response.Cookies.Delete(RefreshTokenCookie, new CookieOptions
         {
             HttpOnly = true,
-            Secure = isSecure,
-            SameSite = SameSiteMode.Lax,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
             Path = "/api/auth"
         });
     }

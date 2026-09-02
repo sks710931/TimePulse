@@ -39,8 +39,6 @@ services:
       dockerfile: Dockerfile
     container_name: timepulse
     restart: always
-    ports:
-      - "7001:7001"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:7001
@@ -58,3 +56,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: always
+    ports:
+      - "7001:7001"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - D:/docker-volumes/caddy_data:/data
+      - D:/docker-volumes/caddy_config:/config
+    depends_on:
+      - timepulse
