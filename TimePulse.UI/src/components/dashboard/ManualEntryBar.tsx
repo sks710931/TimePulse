@@ -213,24 +213,14 @@ export function ManualEntryBar({
               type="time"
               value={startTimeStr}
               onChange={(e) => setStartTimeStr(e.target.value)}
-              onClick={(e) => {
-                try {
-                  e.currentTarget.showPicker()
-                } catch {}
-              }}
-              className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none w-[54px] text-center cursor-pointer text-xs [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+              className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none w-[54px] text-center text-xs [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
             />
             <span className="text-slate-400 dark:text-slate-600">-</span>
             <input
               type="time"
               value={endTimeStr}
               onChange={(e) => setEndTimeStr(e.target.value)}
-              onClick={(e) => {
-                try {
-                  e.currentTarget.showPicker()
-                } catch {}
-              }}
-              className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none w-[54px] text-center cursor-pointer text-xs [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+              className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none w-[54px] text-center text-xs [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
             />
           </div>
 
