@@ -43,8 +43,8 @@ RUN dotnet publish TimePulse.API/TimePulse.API.csproj -c Release -o /app/publish
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS final
 WORKDIR /app
 
-EXPOSE 8080
-ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 7001
+ENV ASPNETCORE_URLS=http://+:7001
 ENV ASPNETCORE_ENVIRONMENT=Production
 
 COPY --from=dotnet-builder /app/publish .

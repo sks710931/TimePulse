@@ -40,10 +40,10 @@ services:
     container_name: timepulse
     restart: always
     ports:
-      - "8080:8080"
+      - "7001:7001"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_URLS=http://+:7001
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=TimePulseDb;Username=skumar;Password=Rachel@123#;
       - Jwt__Key=TimePulse-Super-Secret-Key-That-Is-At-Least-32-Bytes-Long!
       - Jwt__Issuer=TimePulse
