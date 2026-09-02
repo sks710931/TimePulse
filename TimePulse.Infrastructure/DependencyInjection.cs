@@ -53,6 +53,7 @@ public static class DependencyInjection
         services.AddScoped<IBrandingService, BrandingService>();
         services.AddScoped<IProjectService, ProjectService>();
         services.AddScoped<ITeamService, TeamService>();
+        services.AddScoped<IEmailService, EmailService>();
 
         return services;
     }
