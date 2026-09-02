@@ -25,3 +25,7 @@ lerna-debug.log*
 
 ## Generated build outputs in wwwroot
 TimePulse.API/wwwroot/
+
+## Local Environment & Secrets
+.env
+

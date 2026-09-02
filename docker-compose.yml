@@ -49,6 +49,11 @@ services:
       - Jwt__Audience=TimePulse
       - Jwt__AccessTokenExpirationMinutes=15
       - Jwt__RefreshTokenExpirationDays=7
+      # Microsoft Graph Email Service
+      - TenantId=${TenantId}
+      - AppId=${AppId}
+      - ClientSecret=${ClientSecret}
+      - SenderEmail=${SenderEmail}
     depends_on:
       postgres:
         condition: service_healthy
