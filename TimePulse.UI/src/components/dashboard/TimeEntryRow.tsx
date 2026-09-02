@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Tag, Trash2, Loader2 } from 'lucide-react'
+import { Tag, Trash2, Loader2, Copy } from 'lucide-react'
 import { ProjectPickerDropdown } from './ProjectPickerDropdown'
 import type { TimeEntryDto, UpdateTimeEntryPayload } from '../../api/timeEntryApi'
 import type { ProjectDto } from '../../api/projectApi'
@@ -8,6 +8,7 @@ interface TimeEntryRowProps {
   entry: TimeEntryDto
   projects: ProjectDto[]
   onSave: (id: string, payload: UpdateTimeEntryPayload) => Promise<void>
+  onDuplicate: (entry: TimeEntryDto) => void
   onDelete: (id: string) => void
 }
 
@@ -15,6 +16,7 @@ export function TimeEntryRow({
   entry,
   projects,
   onSave,
+  onDuplicate,
   onDelete,
 }: TimeEntryRowProps) {
   const formatTimeOnly = (isoString: string) => {
@@ -282,10 +284,22 @@ export function TimeEntryRow({
           {formatDuration(currentDurationMinutes)}
         </span>
 
-        {/* Saving Indicator or Delete Button */}
-        <div className="w-7 flex items-center justify-center">
+        {/* Actions: Duplicate & Delete */}
+        <div className="flex items-center gap-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => onDuplicate(entry)}
+            disabled={isSaving}
+            title="Duplicate entry"
+            className="p-1 text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded-lg transition-colors cursor-pointer disabled:opacity-40"
+          >
+            <Copy className="w-3.5 h-3.5" />
+          </button>
+
           {isSaving ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-500" />
+            <div className="w-6 flex items-center justify-center">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-500" />
+            </div>
           ) : (
             <button
               type="button"

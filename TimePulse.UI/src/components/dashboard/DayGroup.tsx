@@ -7,6 +7,7 @@ interface DayGroupProps {
   entries: TimeEntryDto[]
   projects: ProjectDto[]
   onSave: (id: string, payload: UpdateTimeEntryPayload) => Promise<void>
+  onDuplicate: (entry: TimeEntryDto) => void
   onDelete: (id: string) => void
 }
 
@@ -15,6 +16,7 @@ export function DayGroup({
   entries,
   projects,
   onSave,
+  onDuplicate,
   onDelete,
 }: DayGroupProps) {
   const totalMinutes = entries.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0)
@@ -46,6 +48,7 @@ export function DayGroup({
             entry={entry}
             projects={projects}
             onSave={onSave}
+            onDuplicate={onDuplicate}
             onDelete={onDelete}
           />
         ))}

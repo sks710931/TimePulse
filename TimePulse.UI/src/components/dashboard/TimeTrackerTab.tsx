@@ -200,6 +200,24 @@ export function TimeTrackerTab() {
     }
   }
 
+  const handleDuplicateEntry = async (entry: TimeEntryDto) => {
+    try {
+      await timeEntryApi.createTimeEntry({
+        description: entry.description,
+        projectId: entry.projectId,
+        tag: entry.tag,
+        startTimeUtc: entry.startTimeUtc,
+        endTimeUtc: entry.endTimeUtc,
+        isBillable: false,
+      })
+      addToast('Time entry duplicated')
+      await fetchEntries(true)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to duplicate time entry.'
+      addToast(msg, 'error')
+    }
+  }
+
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize)
     setPage(1)
@@ -242,6 +260,7 @@ export function TimeTrackerTab() {
                 dayGroups={weekGroup.dayGroups}
                 projects={projects}
                 onSave={handleSaveInline}
+                onDuplicate={handleDuplicateEntry}
                 onDelete={handleDeleteEntry}
               />
             ))}

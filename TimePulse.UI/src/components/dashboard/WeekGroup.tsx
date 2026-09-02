@@ -13,6 +13,7 @@ interface WeekGroupProps {
   dayGroups: DayGroupData[]
   projects: ProjectDto[]
   onSave: (id: string, payload: UpdateTimeEntryPayload) => Promise<void>
+  onDuplicate: (entry: TimeEntryDto) => void
   onDelete: (id: string) => void
 }
 
@@ -22,6 +23,7 @@ export function WeekGroup({
   dayGroups,
   projects,
   onSave,
+  onDuplicate,
   onDelete,
 }: WeekGroupProps) {
   const formatTotalTime = (minutes: number) => {
@@ -54,6 +56,7 @@ export function WeekGroup({
             entries={group.entries}
             projects={projects}
             onSave={onSave}
+            onDuplicate={onDuplicate}
             onDelete={onDelete}
           />
         ))}
