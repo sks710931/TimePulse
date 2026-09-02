@@ -65,6 +65,7 @@ services:
       - "7001:7001"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/etc/caddy/certs:ro
       - D:/docker-volumes/caddy_data:/data
       - D:/docker-volumes/caddy_config:/config
     depends_on:
