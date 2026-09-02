@@ -23,6 +23,7 @@ COPY TimePulse.Application/TimePulse.Application.csproj TimePulse.Application/
 COPY TimePulse.Infrastructure/TimePulse.Infrastructure.csproj TimePulse.Infrastructure/
 COPY TimePulse.API/TimePulse.API.csproj TimePulse.API/
 COPY TimePulse.UI/TimePulse.UI.esproj TimePulse.UI/
+COPY TimePulse.UI/package*.json TimePulse.UI/
 
 RUN dotnet restore TimePulse.API/TimePulse.API.csproj
 
