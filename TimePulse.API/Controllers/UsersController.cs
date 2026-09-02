@@ -62,6 +62,38 @@ public class UsersController : ControllerBase
         return Ok(result.Data);
     }
 
+    [HttpGet("invitations")]
+    public async Task<IActionResult> GetInvitations([FromQuery] string? status, CancellationToken cancellationToken)
+    {
+        var invitations = await _userService.GetInvitationsAsync(status, cancellationToken);
+        return Ok(invitations);
+    }
+
+    [HttpPost("invitations/{id:guid}/resend")]
+    public async Task<IActionResult> ResendInvitation(Guid id, CancellationToken cancellationToken)
+    {
+        var requestBaseUrl = $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
+        var result = await _userService.ResendInvitationAsync(id, requestBaseUrl, cancellationToken);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors });
+        }
+
+        return Ok(result.Data);
+    }
+
+    [HttpDelete("invitations/{id:guid}")]
+    public async Task<IActionResult> RevokeInvitation(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _userService.RevokeInvitationAsync(id, cancellationToken);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors });
+        }
+
+        return Ok(new { success = true });
+    }
+
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {

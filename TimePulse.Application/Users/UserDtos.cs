@@ -32,6 +32,7 @@ public record InvitationDto(
     DateTime CreatedAtUtc,
     DateTime ExpiresAtUtc,
     bool IsConsumed,
+    DateTime? ConsumedAtUtc,
     Guid InvitedByUserId);
 
 public record UpdateUserRequest(

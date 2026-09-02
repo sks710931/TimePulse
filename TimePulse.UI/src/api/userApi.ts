@@ -23,6 +23,19 @@ export interface InvitationResultDto {
   createdAtUtc: string
   expiresAtUtc: string
   isConsumed: boolean
+  consumedAtUtc?: string | null
+  invitedByUserId: string
+}
+
+export interface InvitationItemDto {
+  id: string
+  email: string
+  roles: string[]
+  teamIds: string[]
+  createdAtUtc: string
+  expiresAtUtc: string
+  isConsumed: boolean
+  consumedAtUtc?: string | null
   invitedByUserId: string
 }
 
@@ -36,8 +49,21 @@ export const userApi = {
     return apiClient.get<UserItemDto[]>('/api/users')
   },
 
+  async getInvitations(status?: 'pending' | 'accepted'): Promise<InvitationItemDto[]> {
+    const query = status ? `?status=${status}` : ''
+    return apiClient.get<InvitationItemDto[]>(`/api/users/invitations${query}`)
+  },
+
   async inviteUser(payload: InviteUserPayload): Promise<InvitationResultDto> {
     return apiClient.post<InvitationResultDto>('/api/users/invite', payload)
+  },
+
+  async resendInvitation(invitationId: string): Promise<InvitationItemDto> {
+    return apiClient.post<InvitationItemDto>(`/api/users/invitations/${invitationId}/resend`, {})
+  },
+
+  async revokeInvitation(invitationId: string): Promise<{ success: boolean }> {
+    return apiClient.delete<{ success: boolean }>(`/api/users/invitations/${invitationId}`)
   },
 
   async updateUser(userId: string, payload: UpdateUserPayload): Promise<UserItemDto> {

@@ -9,6 +9,9 @@ public interface IUserService
     Task<IReadOnlyList<UserDto>> GetAllUsersAsync(CancellationToken cancellationToken = default);
     Task<UserDto?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<Result<InvitationDto>> InviteUserAsync(InviteUserRequest request, Guid callerUserId, bool isCallerAdmin, string? requestBaseUrl = null, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<InvitationDto>> GetInvitationsAsync(string? status = null, CancellationToken cancellationToken = default);
+    Task<Result<bool>> RevokeInvitationAsync(Guid invitationId, CancellationToken cancellationToken = default);
+    Task<Result<InvitationDto>> ResendInvitationAsync(Guid invitationId, string? requestBaseUrl = null, CancellationToken cancellationToken = default);
     Task<Result<ValidateInvitationResponse>> ValidateInvitationAsync(string token, CancellationToken cancellationToken = default);
     Task<Result<AuthResult>> AcceptInvitationAsync(AcceptInvitationRequest request, CancellationToken cancellationToken = default);
     Task<Result<UserDto>> UpdateUserAsync(Guid targetUserId, UpdateUserRequest request, Guid callerUserId, bool isCallerAdmin, bool isCallerManager, CancellationToken cancellationToken = default);

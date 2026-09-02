@@ -14,6 +14,12 @@ public class UserInvitationRepository : IUserInvitationRepository
         _context = context;
     }
 
+    public async Task<UserInvitation?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.UserInvitations
+            .FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
+    }
+
     public async Task<UserInvitation?> GetByTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default)
     {
         return await _context.UserInvitations
@@ -29,6 +35,14 @@ public class UserInvitationRepository : IUserInvitationRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<UserInvitation>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.UserInvitations
+            .AsNoTracking()
+            .OrderByDescending(i => i.CreatedAtUtc)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<UserInvitation>> GetAllPendingAsync(CancellationToken cancellationToken = default)
     {
         return await _context.UserInvitations
@@ -40,6 +54,12 @@ public class UserInvitationRepository : IUserInvitationRepository
     public async Task AddAsync(UserInvitation invitation, CancellationToken cancellationToken = default)
     {
         await _context.UserInvitations.AddAsync(invitation, cancellationToken);
+    }
+
+    public Task DeleteAsync(UserInvitation invitation, CancellationToken cancellationToken = default)
+    {
+        _context.UserInvitations.Remove(invitation);
+        return Task.CompletedTask;
     }
 
     public async Task InvalidateAllForEmailAsync(string email, CancellationToken cancellationToken = default)

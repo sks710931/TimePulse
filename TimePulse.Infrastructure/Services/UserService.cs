@@ -174,6 +174,7 @@ public class UserService : IUserService
                 invitation.CreatedAtUtc,
                 invitation.ExpiresAtUtc,
                 invitation.IsConsumed,
+                invitation.ConsumedAtUtc,
                 invitation.InvitedByUserId);
 
             return Result<InvitationDto>.Success(dto);
@@ -181,6 +182,144 @@ public class UserService : IUserService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create invitation for {Email}", normalizedEmail);
+            return Result<InvitationDto>.Failure(ex.Message);
+        }
+    }
+
+    public async Task<IReadOnlyList<InvitationDto>> GetInvitationsAsync(string? status = null, CancellationToken cancellationToken = default)
+    {
+        var invitations = await _invitationRepository.GetAllAsync(cancellationToken);
+
+        IEnumerable<UserInvitation> filtered = invitations;
+        if (string.Equals(status, "pending", StringComparison.OrdinalIgnoreCase))
+        {
+            filtered = invitations.Where(i => !i.IsConsumed && i.ExpiresAtUtc > DateTime.UtcNow);
+        }
+        else if (string.Equals(status, "accepted", StringComparison.OrdinalIgnoreCase))
+        {
+            filtered = invitations.Where(i => i.IsConsumed);
+        }
+
+        return filtered.Select(i => new InvitationDto(
+            i.Id,
+            i.Email,
+            i.GetRoles(),
+            i.GetTeamIds(),
+            i.CreatedAtUtc,
+            i.ExpiresAtUtc,
+            i.IsConsumed,
+            i.ConsumedAtUtc,
+            i.InvitedByUserId)).ToList();
+    }
+
+    public async Task<Result<bool>> RevokeInvitationAsync(Guid invitationId, CancellationToken cancellationToken = default)
+    {
+        var invitation = await _invitationRepository.GetByIdAsync(invitationId, cancellationToken);
+        if (invitation is null)
+        {
+            return Result<bool>.Failure("Invitation not found.");
+        }
+
+        if (invitation.IsConsumed)
+        {
+            return Result<bool>.Failure("Cannot revoke an invitation that has already been accepted.");
+        }
+
+        try
+        {
+            await _invitationRepository.DeleteAsync(invitation, cancellationToken);
+            await _invitationRepository.SaveChangesAsync(cancellationToken);
+            return Result<bool>.Success(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to revoke invitation {InvitationId}", invitationId);
+            return Result<bool>.Failure(ex.Message);
+        }
+    }
+
+    public async Task<Result<InvitationDto>> ResendInvitationAsync(Guid invitationId, string? requestBaseUrl = null, CancellationToken cancellationToken = default)
+    {
+        var invitation = await _invitationRepository.GetByIdAsync(invitationId, cancellationToken);
+        if (invitation is null)
+        {
+            return Result<InvitationDto>.Failure("Invitation not found.");
+        }
+
+        if (invitation.IsConsumed)
+        {
+            return Result<InvitationDto>.Failure("Cannot resend an invitation that has already been accepted.");
+        }
+
+        if (await _userRepository.ExistsAsync(invitation.Email, cancellationToken))
+        {
+            return Result<InvitationDto>.Failure("User has already been activated.");
+        }
+
+        // Generate new token & invalidate existing
+        var rawToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+        var tokenHash = HashToken(rawToken);
+
+        await _invitationRepository.InvalidateAllForEmailAsync(invitation.Email, cancellationToken);
+
+        var newInvitation = UserInvitation.Create(
+            invitation.Email,
+            tokenHash,
+            invitation.GetRoles(),
+            invitation.GetTeamIds(),
+            invitation.InvitedByUserId,
+            expiryHours: 48);
+
+        try
+        {
+            await _invitationRepository.AddAsync(newInvitation, cancellationToken);
+            await _invitationRepository.SaveChangesAsync(cancellationToken);
+
+            string baseUrl;
+            if (!string.IsNullOrWhiteSpace(_configuration["App:BaseUrl"]))
+            {
+                baseUrl = _configuration["App:BaseUrl"]!;
+            }
+            else if (!string.IsNullOrWhiteSpace(_configuration["ClientUrl"]))
+            {
+                baseUrl = _configuration["ClientUrl"]!;
+            }
+            else if (!string.IsNullOrWhiteSpace(requestBaseUrl))
+            {
+                baseUrl = requestBaseUrl;
+            }
+            else
+            {
+                baseUrl = "http://localhost:5173";
+            }
+            baseUrl = baseUrl.TrimEnd('/');
+            var inviteUrl = $"{baseUrl}/invite/accept?token={rawToken}";
+
+            var roleNames = string.Join(", ", invitation.GetRoles());
+            await _emailService.SendUserInvitationEmailAsync(
+                newInvitation.Email,
+                newInvitation.Email.Split('@')[0],
+                inviteUrl,
+                roleNames,
+                expiryHours: 48,
+                cancellationToken);
+
+            var dto = new InvitationDto(
+                newInvitation.Id,
+                newInvitation.Email,
+                newInvitation.GetRoles(),
+                newInvitation.GetTeamIds(),
+                newInvitation.CreatedAtUtc,
+                newInvitation.ExpiresAtUtc,
+                newInvitation.IsConsumed,
+                newInvitation.ConsumedAtUtc,
+                newInvitation.InvitedByUserId);
+
+            return Result<InvitationDto>.Success(dto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to resend invitation for {Email}", invitation.Email);
             return Result<InvitationDto>.Failure(ex.Message);
         }
     }
