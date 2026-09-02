@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Tag, Trash2, Loader2, Copy } from 'lucide-react'
+import { Tag, Trash2, Loader2, Copy, Calendar } from 'lucide-react'
 import { ProjectPickerDropdown } from './ProjectPickerDropdown'
 import type { TimeEntryDto, UpdateTimeEntryPayload } from '../../api/timeEntryApi'
 import type { ProjectDto } from '../../api/projectApi'
@@ -24,9 +24,18 @@ export function TimeEntryRow({
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
   }
 
+  const formatDateToYyyyMmDd = (isoString: string) => {
+    const d = new Date(isoString)
+    const yyyy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  }
+
   const [description, setDescription] = useState(entry.description || '')
   const [projectId, setProjectId] = useState<string | null>(entry.projectId || null)
   const [tag, setTag] = useState<string>(entry.tag || '')
+  const [dateStr, setDateStr] = useState(formatDateToYyyyMmDd(entry.startTimeUtc))
   const [startTimeStr, setStartTimeStr] = useState(formatTimeOnly(entry.startTimeUtc))
   const [endTimeStr, setEndTimeStr] = useState(formatTimeOnly(entry.endTimeUtc))
   const [isSaving, setIsSaving] = useState(false)
@@ -34,12 +43,22 @@ export function TimeEntryRow({
 
   const rowRef = useRef<HTMLDivElement>(null)
   const tagRef = useRef<HTMLDivElement>(null)
+  const dateInputRef = useRef<HTMLInputElement>(null)
+
+  const openDatePicker = () => {
+    try {
+      dateInputRef.current?.showPicker()
+    } catch {
+      dateInputRef.current?.focus()
+    }
+  }
 
   // Sync state if entry prop updates from outside
   useEffect(() => {
     setDescription(entry.description || '')
     setProjectId(entry.projectId || null)
     setTag(entry.tag || '')
+    setDateStr(formatDateToYyyyMmDd(entry.startTimeUtc))
     setStartTimeStr(formatTimeOnly(entry.startTimeUtc))
     setEndTimeStr(formatTimeOnly(entry.endTimeUtc))
   }, [entry])
@@ -64,9 +83,11 @@ export function TimeEntryRow({
     desc = description,
     pId = projectId,
     t = tag,
+    dStr = dateStr,
     sTime = startTimeStr,
     eTime = endTimeStr
   ) => {
+    const entryDate = formatDateToYyyyMmDd(entry.startTimeUtc)
     const entryStart = formatTimeOnly(entry.startTimeUtc)
     const entryEnd = formatTimeOnly(entry.endTimeUtc)
     const entryTag = entry.tag || ''
@@ -76,6 +97,7 @@ export function TimeEntryRow({
       desc.trim() !== (entry.description || '').trim() ||
       pId !== entryPid ||
       t.trim() !== entryTag.trim() ||
+      dStr !== entryDate ||
       sTime !== entryStart ||
       eTime !== entryEnd
     )
@@ -85,28 +107,27 @@ export function TimeEntryRow({
     description?: string
     projectId?: string | null
     tag?: string
+    dateStr?: string
     startTimeStr?: string
     endTimeStr?: string
   }) => {
     const nextDesc = override?.description !== undefined ? override.description : description
     const nextPid = override?.projectId !== undefined ? override.projectId : projectId
     const nextTag = override?.tag !== undefined ? override.tag : tag
+    const nextDate = override?.dateStr !== undefined ? override.dateStr : dateStr
     const nextStart = override?.startTimeStr !== undefined ? override.startTimeStr : startTimeStr
     const nextEnd = override?.endTimeStr !== undefined ? override.endTimeStr : endTimeStr
 
-    if (!hasChanges(nextDesc, nextPid, nextTag, nextStart, nextEnd)) {
+    if (!hasChanges(nextDesc, nextPid, nextTag, nextDate, nextStart, nextEnd)) {
       return
     }
 
-    const origStart = new Date(entry.startTimeUtc)
+    const [year, month, day] = nextDate.split('-').map(Number)
     const [startH, startM] = nextStart.split(':').map(Number)
     const [endH, endM] = nextEnd.split(':').map(Number)
 
-    const newStart = new Date(origStart)
-    newStart.setHours(startH, startM, 0, 0)
-
-    let newEnd = new Date(origStart)
-    newEnd.setHours(endH, endM, 0, 0)
+    const newStart = new Date(year, month - 1, day, startH, startM, 0)
+    let newEnd = new Date(year, month - 1, day, endH, endM, 0)
     if (newEnd < newStart) {
       newEnd = newStart
     }
@@ -141,6 +162,13 @@ export function TimeEntryRow({
   const handleSelectProject = (newProjectId: string | null) => {
     setProjectId(newProjectId)
     saveIfChanged({ projectId: newProjectId })
+  }
+
+  const handleDateChange = (newDate: string) => {
+    setDateStr(newDate)
+    if (newDate) {
+      saveIfChanged({ dateStr: newDate })
+    }
   }
 
   const currentDurationMinutes = useMemo(() => {
@@ -190,8 +218,8 @@ export function TimeEntryRow({
         />
       </div>
 
-      {/* Tag, Time range, Duration, Delete */}
-      <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+      {/* Tag, Date, Time range, Duration, Actions */}
+      <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5 shrink-0">
         {/* Tag Picker Popover */}
         <div className="relative" ref={tagRef}>
           <button
@@ -254,6 +282,26 @@ export function TimeEntryRow({
               </div>
             </div>
           )}
+        </div>
+
+        {/* Calendar Date Picker Control */}
+        <div
+          onClick={openDatePicker}
+          title="Change date (reassign to another day)"
+          className="relative flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 cursor-pointer transition-colors shrink-0"
+        >
+          <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+          <input
+            ref={dateInputRef}
+            type="date"
+            value={dateStr}
+            onClick={(e) => {
+              e.stopPropagation()
+              openDatePicker()
+            }}
+            onChange={(e) => handleDateChange(e.target.value)}
+            className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none text-xs cursor-pointer"
+          />
         </div>
 
         {/* Inline Time Range: start - end */}
