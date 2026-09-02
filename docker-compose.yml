@@ -33,6 +33,7 @@ services:
         condition: service_healthy
 
   timepulse:
+    image: skumargleason/timepulse:latest
     build:
       context: .
       dockerfile: Dockerfile
