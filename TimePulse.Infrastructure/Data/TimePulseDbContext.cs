@@ -14,6 +14,7 @@ public class TimePulseDbContext : DbContext, IApplicationDbContext
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
     public DbSet<TeamProject> TeamProjects => Set<TeamProject>();
+    public DbSet<UserInvitation> UserInvitations => Set<UserInvitation>();
 
     public TimePulseDbContext(DbContextOptions<TimePulseDbContext> options)
         : base(options)

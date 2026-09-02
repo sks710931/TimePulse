@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { X, UserPlus, Mail, Lock, User, Briefcase, UserCheck, Loader2 } from 'lucide-react'
+import { X, Mail, Briefcase, UserCheck, Loader2, Send, Check } from 'lucide-react'
 import { userApi } from '../../api/userApi'
+import { teamApi, type TeamDto } from '../../api/teamApi'
 
 interface CreateUserModalProps {
   isOpen: boolean
@@ -15,41 +16,49 @@ export function CreateUserModal({
   onUserCreated,
   isAdmin,
 }: CreateUserModalProps) {
-  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [role, setRole] = useState<'Manager' | 'Employee'>(isAdmin ? 'Employee' : 'Employee')
+  const [role, setRole] = useState<'Manager' | 'Employee'>('Employee')
+  const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([])
+  const [teams, setTeams] = useState<TeamDto[]>([])
+  const [isLoadingTeams, setIsLoadingTeams] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (isOpen) {
-      setFullName('')
       setEmail('')
-      setPassword('')
       setRole('Employee')
+      setSelectedTeamIds([])
       setError(null)
+      setSuccessMessage(null)
+
+      // Load available teams for assignment
+      setIsLoadingTeams(true)
+      teamApi
+        .getTeams()
+        .then((data) => setTeams(data))
+        .catch(() => setTeams([]))
+        .finally(() => setIsLoadingTeams(false))
     }
   }, [isOpen])
 
   if (!isOpen) return null
 
+  const toggleTeam = (teamId: string) => {
+    setSelectedTeamIds((prev) =>
+      prev.includes(teamId) ? prev.filter((id) => id !== teamId) : [...prev, teamId]
+    )
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setSuccessMessage(null)
 
-    if (!fullName.trim()) {
-      setError('Full name is required.')
-      return
-    }
-
-    if (!email.trim()) {
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!normalizedEmail) {
       setError('Email address is required.')
-      return
-    }
-
-    if (!password || password.length < 6) {
-      setError('Password must be at least 6 characters.')
       return
     }
 
@@ -57,16 +66,19 @@ export function CreateUserModal({
 
     setIsLoading(true)
     try {
-      await userApi.createUser({
-        fullName: fullName.trim(),
-        email: email.trim().toLowerCase(),
-        password,
-        role: assignedRole,
+      await userApi.inviteUser({
+        email: normalizedEmail,
+        roles: [assignedRole],
+        teamIds: selectedTeamIds.length > 0 ? selectedTeamIds : undefined,
       })
-      onUserCreated()
-      onClose()
+
+      setSuccessMessage(`Invitation successfully sent to ${normalizedEmail}!`)
+      setTimeout(() => {
+        onUserCreated()
+        onClose()
+      }, 1500)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create user.')
+      setError(err instanceof Error ? err.message : 'Failed to send invitation.')
     } finally {
       setIsLoading(false)
     }
@@ -82,16 +94,16 @@ export function CreateUserModal({
         <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-100 dark:border-indigo-900/60 shrink-0">
-              <UserPlus className="w-5 h-5" />
+              <Send className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Add New User
+                Invite New User
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {isAdmin
-                  ? 'Create a new Manager or Employee account.'
-                  : 'Create a new Employee account.'}
+                  ? 'Send an invitation link to onboard a Manager or Employee.'
+                  : 'Send an invitation link to onboard an Employee.'}
               </p>
             </div>
           </div>
@@ -112,23 +124,12 @@ export function CreateUserModal({
             </div>
           )}
 
-          {/* Full Name */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Full Name
-            </label>
-            <div className="relative">
-              <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g. John Doe"
-                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-              />
+          {successMessage && (
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+              <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>{successMessage}</span>
             </div>
-          </div>
+          )}
 
           {/* Email Address */}
           <div>
@@ -142,35 +143,19 @@ export function CreateUserModal({
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. jdoe@company.com"
+                placeholder="e.g. colleague@company.com"
                 className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
               />
             </div>
-          </div>
-
-          {/* Temporary Password */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Initial Password
-            </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimum 6 characters"
-                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-              />
-            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              The user will receive an email invitation to set up their password.
+            </p>
           </div>
 
           {/* Role Selection */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Account Role
+              Assign Role
             </label>
 
             {isAdmin ? (
@@ -188,7 +173,7 @@ export function CreateUserModal({
                   <div>
                     <span className="text-xs font-bold block">Employee</span>
                     <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
-                      Time tracking & personal dashboard
+                      Time tracking & team tasks
                     </span>
                   </div>
                 </button>
@@ -206,7 +191,7 @@ export function CreateUserModal({
                   <div>
                     <span className="text-xs font-bold block">Manager</span>
                     <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
-                      Team oversight & employee management
+                      Team oversight & projects
                     </span>
                   </div>
                 </button>
@@ -220,13 +205,59 @@ export function CreateUserModal({
                       Employee
                     </span>
                     <span className="text-[11px] text-sky-700 dark:text-sky-400 block">
-                      Managers are authorized to create Employee accounts.
+                      Managers are authorized to invite Employee accounts.
                     </span>
                   </div>
                 </div>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 dark:bg-sky-900/60 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-700">
                   Fixed
                 </span>
+              </div>
+            )}
+          </div>
+
+          {/* Add to Teams (Optional) */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              Add to Teams (Optional)
+            </label>
+            {isLoadingTeams ? (
+              <div className="p-3 text-xs text-slate-400 flex items-center gap-2">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Loading available teams...</span>
+              </div>
+            ) : teams.length === 0 ? (
+              <div className="p-3 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-400">
+                No teams available yet. You can assign teams later from the Teams page.
+              </div>
+            ) : (
+              <div className="max-h-36 overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-100 dark:divide-slate-800/60 bg-slate-50/50 dark:bg-slate-950/40">
+                {teams.map((t) => {
+                  const isChecked = selectedTeamIds.includes(t.id)
+                  return (
+                    <label
+                      key={t.id}
+                      className="flex items-center justify-between p-2.5 hover:bg-slate-100/60 dark:hover:bg-slate-800/50 transition-colors cursor-pointer text-xs"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: t.colorHex || '#6366f1' }}
+                        />
+                        <span className="font-medium text-slate-800 dark:text-slate-200 truncate">
+                          {t.name}
+                        </span>
+                      </div>
+
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleTeam(t.id)}
+                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      />
+                    </label>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -244,18 +275,18 @@ export function CreateUserModal({
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || Boolean(successMessage)}
               className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Creating User...</span>
+                  <span>Sending Invitation...</span>
                 </>
               ) : (
                 <>
-                  <UserPlus className="w-3.5 h-3.5" />
-                  <span>Create User</span>
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Send Invitation</span>
                 </>
               )}
             </button>

@@ -7,6 +7,7 @@ import { applyThemeToDom, applyBrandColorsToDom } from './store/slices/themeSlic
 import { ProtectedRoute } from './components/common/ProtectedRoute'
 import { PublicOnlyRoute } from './components/common/PublicOnlyRoute'
 import { LoginPage } from './pages/LoginPage'
+import { AcceptInvitationPage } from './pages/AcceptInvitationPage'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { OverviewPage } from './pages/OverviewPage'
 import { TimeTrackerPage } from './pages/TimeTrackerPage'
@@ -68,6 +69,9 @@ function App() {
             )
           }
         />
+
+        {/* Public Invitation Accept Route */}
+        <Route path="/invite/accept" element={<AcceptInvitationPage />} />
 
         {/* Public Routes (Redirect to /overview if already authenticated) */}
         <Route element={<PublicOnlyRoute />}>

@@ -1,3 +1,8 @@
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using TimePulse.Application.Auth;
 using TimePulse.Application.Common.Interfaces;
 using TimePulse.Application.Common.Models;
 using TimePulse.Application.Users;
@@ -10,10 +15,29 @@ namespace TimePulse.Infrastructure.Services;
 public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IUserInvitationRepository _invitationRepository;
+    private readonly ITeamRepository _teamRepository;
+    private readonly IEmailService _emailService;
+    private readonly ITokenService _tokenService;
+    private readonly IConfiguration _configuration;
+    private readonly ILogger<UserService> _logger;
 
-    public UserService(IUserRepository userRepository)
+    public UserService(
+        IUserRepository userRepository,
+        IUserInvitationRepository invitationRepository,
+        ITeamRepository teamRepository,
+        IEmailService emailService,
+        ITokenService tokenService,
+        IConfiguration configuration,
+        ILogger<UserService> logger)
     {
         _userRepository = userRepository;
+        _invitationRepository = invitationRepository;
+        _teamRepository = teamRepository;
+        _emailService = emailService;
+        _tokenService = tokenService;
+        _configuration = configuration;
+        _logger = logger;
     }
 
     public async Task<IReadOnlyList<UserDto>> GetAllUsersAsync(CancellationToken cancellationToken = default)
@@ -28,65 +52,240 @@ public class UserService : IUserService
         return user is null ? null : MapToDto(user);
     }
 
-    public async Task<Result<UserDto>> CreateUserAsync(CreateUserRequest request, bool isCallerAdmin, CancellationToken cancellationToken = default)
+    public async Task<Result<InvitationDto>> InviteUserAsync(
+        InviteUserRequest request,
+        Guid callerUserId,
+        bool isCallerAdmin,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Email))
         {
-            return Result<UserDto>.Failure("Email is required.");
+            return Result<InvitationDto>.Failure("Email is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(request.FullName))
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+
+        if (request.Roles is null || request.Roles.Count == 0)
         {
-            return Result<UserDto>.Failure("Full name is required.");
+            return Result<InvitationDto>.Failure("At least one role must be assigned.");
         }
 
-        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
+        var normalizedRoles = new List<string>();
+        foreach (var role in request.Roles)
         {
-            return Result<UserDto>.Failure("Password must be at least 6 characters.");
+            if (!Roles.IsValid(role))
+            {
+                return Result<InvitationDto>.Failure($"Invalid role: '{role}'.");
+            }
+            var norm = Roles.All.First(r => r.Equals(role, StringComparison.OrdinalIgnoreCase));
+            if (!normalizedRoles.Contains(norm))
+            {
+                normalizedRoles.Add(norm);
+            }
         }
-
-        if (string.IsNullOrWhiteSpace(request.Role) || !Roles.IsValid(request.Role))
-        {
-            return Result<UserDto>.Failure($"Invalid role: '{request.Role}'.");
-        }
-
-        var normalizedRole = Roles.All.First(r => r.Equals(request.Role, StringComparison.OrdinalIgnoreCase));
 
         // Role enforcement:
         // - Managers can only assign Employee role
-        // - Admins can assign Manager or Employee role
+        // - Admins can assign Manager or Employee role (cannot invite Admin)
         if (!isCallerAdmin)
         {
-            if (!normalizedRole.Equals(Roles.Employee, StringComparison.OrdinalIgnoreCase))
+            if (normalizedRoles.Any(r => !r.Equals(Roles.Employee, StringComparison.OrdinalIgnoreCase)))
             {
-                return Result<UserDto>.Failure("Managers are only authorized to create users with the Employee role.");
+                return Result<InvitationDto>.Failure("Managers are only authorized to invite users with the Employee role.");
             }
         }
         else
         {
-            if (normalizedRole.Equals(Roles.Admin, StringComparison.OrdinalIgnoreCase))
+            if (normalizedRoles.Any(r => r.Equals(Roles.Admin, StringComparison.OrdinalIgnoreCase)))
             {
-                return Result<UserDto>.Failure("Cannot create additional Admin users through this interface.");
+                return Result<InvitationDto>.Failure("Cannot invite additional Admin users through this interface.");
             }
         }
 
-        if (await _userRepository.ExistsAsync(request.Email, cancellationToken))
+        // Check if user already exists
+        if (await _userRepository.ExistsAsync(normalizedEmail, cancellationToken))
         {
-            return Result<UserDto>.Failure("A user with this email already exists.");
+            return Result<InvitationDto>.Failure("A user with this email already exists.");
         }
 
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-        var user = User.Create(request.Email, passwordHash, request.FullName, normalizedRole);
+        // Generate cryptographically secure token
+        var rawToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+        var tokenHash = HashToken(rawToken);
+
+        // Invalidate any prior pending invitations for this email
+        await _invitationRepository.InvalidateAllForEmailAsync(normalizedEmail, cancellationToken);
+
+        var invitation = UserInvitation.Create(
+            normalizedEmail,
+            tokenHash,
+            normalizedRoles,
+            request.TeamIds,
+            callerUserId,
+            expiryHours: 48);
 
         try
         {
-            await _userRepository.AddAsync(user, cancellationToken);
-            await _userRepository.SaveChangesAsync(cancellationToken);
-            return Result<UserDto>.Success(MapToDto(user));
+            await _invitationRepository.AddAsync(invitation, cancellationToken);
+            await _invitationRepository.SaveChangesAsync(cancellationToken);
+
+            // Construct invitation link
+            var baseUrl = _configuration["App:BaseUrl"]
+                ?? _configuration["ClientUrl"]
+                ?? "http://localhost:5173";
+            baseUrl = baseUrl.TrimEnd('/');
+            var inviteUrl = $"{baseUrl}/invite/accept?token={rawToken}";
+
+            // Send invitation email via EmailService
+            var roleNames = string.Join(", ", normalizedRoles);
+            var emailResult = await _emailService.SendUserInvitationEmailAsync(
+                normalizedEmail,
+                normalizedEmail.Split('@')[0],
+                inviteUrl,
+                roleNames,
+                expiryHours: 48,
+                cancellationToken);
+
+            if (!emailResult.Succeeded)
+            {
+                _logger.LogWarning("Invitation created for {Email} but email failed to send: {Errors}",
+                    normalizedEmail, string.Join(", ", emailResult.Errors));
+            }
+
+            var dto = new InvitationDto(
+                invitation.Id,
+                invitation.Email,
+                invitation.GetRoles(),
+                invitation.GetTeamIds(),
+                invitation.CreatedAtUtc,
+                invitation.ExpiresAtUtc,
+                invitation.IsConsumed,
+                invitation.InvitedByUserId);
+
+            return Result<InvitationDto>.Success(dto);
         }
         catch (Exception ex)
         {
-            return Result<UserDto>.Failure(ex.Message);
+            _logger.LogError(ex, "Failed to create invitation for {Email}", normalizedEmail);
+            return Result<InvitationDto>.Failure(ex.Message);
+        }
+    }
+
+    public async Task<Result<ValidateInvitationResponse>> ValidateInvitationAsync(
+        string token,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return Result<ValidateInvitationResponse>.Failure("Invitation token is required.");
+        }
+
+        var tokenHash = HashToken(token.Trim());
+        var invitation = await _invitationRepository.GetByTokenHashAsync(tokenHash, cancellationToken);
+
+        if (invitation is null)
+        {
+            return Result<ValidateInvitationResponse>.Failure("Invitation link is invalid.");
+        }
+
+        if (invitation.IsConsumed)
+        {
+            return Result<ValidateInvitationResponse>.Failure("This invitation link has already been used.");
+        }
+
+        if (invitation.IsExpired)
+        {
+            return Result<ValidateInvitationResponse>.Failure("This invitation link has expired. Please request a new invitation from your administrator.");
+        }
+
+        if (await _userRepository.ExistsAsync(invitation.Email, cancellationToken))
+        {
+            return Result<ValidateInvitationResponse>.Failure("A user with this email has already been activated.");
+        }
+
+        var response = new ValidateInvitationResponse(
+            invitation.Email,
+            invitation.GetRoles(),
+            invitation.GetTeamIds(),
+            invitation.ExpiresAtUtc);
+
+        return Result<ValidateInvitationResponse>.Success(response);
+    }
+
+    public async Task<Result<AuthResult>> AcceptInvitationAsync(
+        AcceptInvitationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token))
+        {
+            return Result<AuthResult>.Failure("Invitation token is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.FullName))
+        {
+            return Result<AuthResult>.Failure("Full name is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
+        {
+            return Result<AuthResult>.Failure("Password must be at least 6 characters.");
+        }
+
+        if (request.Password != request.ConfirmPassword)
+        {
+            return Result<AuthResult>.Failure("Passwords do not match.");
+        }
+
+        var tokenHash = HashToken(request.Token.Trim());
+        var invitation = await _invitationRepository.GetByTokenHashAsync(tokenHash, cancellationToken);
+
+        if (invitation is null || !invitation.IsValid)
+        {
+            return Result<AuthResult>.Failure("This invitation is invalid or has expired.");
+        }
+
+        if (await _userRepository.ExistsAsync(invitation.Email, cancellationToken))
+        {
+            return Result<AuthResult>.Failure("A user with this email has already been activated.");
+        }
+
+        try
+        {
+            // 1. Create user with assigned roles
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            var user = User.CreateFromInvitation(
+                invitation.Email,
+                passwordHash,
+                request.FullName.Trim(),
+                invitation.GetRoles());
+
+            await _userRepository.AddAsync(user, cancellationToken);
+            await _userRepository.SaveChangesAsync(cancellationToken);
+
+            // 2. Add user to assigned teams
+            var teamIds = invitation.GetTeamIds();
+            foreach (var teamId in teamIds)
+            {
+                await _teamRepository.AddMemberAsync(teamId, user.Id, cancellationToken);
+            }
+            if (teamIds.Count > 0)
+            {
+                await _teamRepository.SaveChangesAsync(cancellationToken);
+            }
+
+            // 3. Mark invitation consumed
+            invitation.Consume();
+            await _invitationRepository.SaveChangesAsync(cancellationToken);
+
+            // 4. Generate login tokens for immediate auto-login
+            var authResult = GenerateTokens(user);
+            await _userRepository.SaveChangesAsync(cancellationToken);
+
+            return Result<AuthResult>.Success(authResult);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to accept invitation for {Email}", invitation.Email);
+            return Result<AuthResult>.Failure(ex.Message);
         }
     }
 
@@ -131,8 +330,6 @@ public class UserService : IUserService
         // RBAC Permissions:
         if (effectiveCallerAdmin)
         {
-            // Admins can edit Admins, Managers, Employees, can assign Admin roles to others, and can take Manager role to themselves.
-            // Safety Check: If target has Admin and new roles remove Admin, ensure at least one other Admin exists.
             var willHaveAdmin = request.Roles.Any(r => r.Equals(Roles.Admin, StringComparison.OrdinalIgnoreCase));
             if (targetUser.HasRole(Roles.Admin) && !willHaveAdmin)
             {
@@ -145,16 +342,13 @@ public class UserService : IUserService
         }
         else if (effectiveCallerManager)
         {
-            // Managers can only edit themselves and employees
             if (!isSelfEdit)
             {
-                // Target must NOT be an Admin or Manager
                 if (targetUser.HasRole(Roles.Admin) || targetUser.HasRole(Roles.Manager))
                 {
                     return Result<UserDto>.Failure("Managers are only permitted to edit themselves and Employees.");
                 }
 
-                // When editing an Employee, Manager cannot assign Admin or Manager roles
                 var hasDisallowedRole = request.Roles.Any(r =>
                     r.Equals(Roles.Admin, StringComparison.OrdinalIgnoreCase) ||
                     r.Equals(Roles.Manager, StringComparison.OrdinalIgnoreCase));
@@ -166,7 +360,6 @@ public class UserService : IUserService
             }
             else
             {
-                // Manager editing themselves: cannot promote themselves to Admin
                 if (request.Roles.Any(r => r.Equals(Roles.Admin, StringComparison.OrdinalIgnoreCase)))
                 {
                     return Result<UserDto>.Failure("Managers cannot assign the Admin role to themselves.");
@@ -182,7 +375,6 @@ public class UserService : IUserService
         {
             targetUser.UpdateFullName(request.FullName);
 
-            // Use direct DB operations for role updates to avoid EF Core change tracker conflicts
             await _userRepository.RemoveUserRolesAsync(targetUserId, cancellationToken);
             foreach (var role in request.Roles)
             {
@@ -193,7 +385,6 @@ public class UserService : IUserService
 
             await _userRepository.SaveChangesAsync(cancellationToken);
 
-            // Reload user to get fresh role data
             var updatedUser = await _userRepository.GetByIdAsync(targetUserId, cancellationToken);
             return Result<UserDto>.Success(MapToDto(updatedUser!));
         }
@@ -251,6 +442,34 @@ public class UserService : IUserService
         {
             return Result<UserDto>.Failure(ex.Message);
         }
+    }
+
+    private AuthResult GenerateTokens(User user)
+    {
+        var accessToken = _tokenService.GenerateAccessToken(user);
+        var rawRefreshToken = _tokenService.GenerateRefreshToken();
+        var refreshTokenHash = _tokenService.HashRefreshToken(rawRefreshToken);
+
+        var refreshTokenDays = int.Parse(
+            _configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
+
+        var refreshTokenEntity = RefreshToken.Create(
+            refreshTokenHash,
+            user.Id,
+            TimeSpan.FromDays(refreshTokenDays));
+
+        user.AddRefreshToken(refreshTokenEntity);
+
+        return AuthResult.Success(
+            accessToken,
+            rawRefreshToken,
+            _tokenService.GetAccessTokenExpiration());
+    }
+
+    private static string HashToken(string token)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
     private static UserDto MapToDto(User user) =>

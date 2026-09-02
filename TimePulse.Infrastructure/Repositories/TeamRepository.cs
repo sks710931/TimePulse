@@ -94,6 +94,18 @@ public class TeamRepository : ITeamRepository
         }
     }
 
+    public async Task AddMemberAsync(Guid teamId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        var exists = await _context.TeamMembers
+            .AnyAsync(m => m.TeamId == teamId && m.UserId == userId, cancellationToken);
+
+        if (!exists)
+        {
+            var member = TeamMember.Create(teamId, userId);
+            await _context.TeamMembers.AddAsync(member, cancellationToken);
+        }
+    }
+
     public async Task SetProjectsAsync(Guid teamId, IEnumerable<Guid> projectIds, CancellationToken cancellationToken = default)
     {
         var existing = await _context.TeamProjects

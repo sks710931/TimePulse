@@ -68,7 +68,7 @@ export function UserManagementTab({
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
-              <span>Add User</span>
+              <span>Invite User</span>
             </button>
           </div>
         </div>

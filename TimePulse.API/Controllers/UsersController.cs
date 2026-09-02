@@ -39,19 +39,26 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request, CancellationToken cancellationToken)
+    [HttpPost("invite")]
+    public async Task<IActionResult> InviteUser([FromBody] InviteUserRequest request, CancellationToken cancellationToken)
     {
+        var callerUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+        if (!Guid.TryParse(callerUserIdStr, out var callerUserId))
+        {
+            return Unauthorized(new { error = "Invalid user identity." });
+        }
+
         var isCallerAdmin = User.IsInRole(Roles.Admin)
             || User.Claims.Any(c => (c.Type == ClaimTypes.Role || c.Type == "role") && c.Value.Equals(Roles.Admin, StringComparison.OrdinalIgnoreCase));
 
-        var result = await _userService.CreateUserAsync(request, isCallerAdmin, cancellationToken);
+        var result = await _userService.InviteUserAsync(request, callerUserId, isCallerAdmin, cancellationToken);
 
         if (!result.Succeeded)
         {
             return BadRequest(new { errors = result.Errors });
         }
 
-        return CreatedAtAction(nameof(GetUserById), new { id = result.Data!.Id }, result.Data);
+        return Ok(result.Data);
     }
 
     [HttpPut("{id:guid}")]

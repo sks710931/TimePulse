@@ -45,6 +45,7 @@ public static class DependencyInjection
         services.AddScoped<IBrandSettingsRepository, BrandSettingsRepository>();
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<ITeamRepository, TeamRepository>();
+        services.AddScoped<IUserInvitationRepository, UserInvitationRepository>();
 
         // Services
         services.AddScoped<ITokenService, TokenService>();

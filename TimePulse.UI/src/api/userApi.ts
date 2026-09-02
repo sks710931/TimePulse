@@ -9,11 +9,21 @@ export interface UserItemDto {
   roles: string[]
 }
 
-export interface CreateUserPayload {
-  fullName: string
+export interface InviteUserPayload {
   email: string
-  password: string
-  role: string
+  roles: string[]
+  teamIds?: string[]
+}
+
+export interface InvitationResultDto {
+  id: string
+  email: string
+  roles: string[]
+  teamIds: string[]
+  createdAtUtc: string
+  expiresAtUtc: string
+  isConsumed: boolean
+  invitedByUserId: string
 }
 
 export interface UpdateUserPayload {
@@ -26,8 +36,8 @@ export const userApi = {
     return apiClient.get<UserItemDto[]>('/api/users')
   },
 
-  async createUser(payload: CreateUserPayload): Promise<UserItemDto> {
-    return apiClient.post<UserItemDto>('/api/users', payload)
+  async inviteUser(payload: InviteUserPayload): Promise<InvitationResultDto> {
+    return apiClient.post<InvitationResultDto>('/api/users/invite', payload)
   },
 
   async updateUser(userId: string, payload: UpdateUserPayload): Promise<UserItemDto> {

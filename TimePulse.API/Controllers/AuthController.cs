@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TimePulse.Application.Auth;
 using TimePulse.Application.Common.Interfaces;
+using TimePulse.Application.Users;
 
 namespace TimePulse.API.Controllers;
 
@@ -77,6 +78,39 @@ public class AuthController : ControllerBase
 
         ClearTokenCookies();
         return Ok(new { message = "Logged out." });
+    }
+
+    [AllowAnonymous]
+    [HttpGet("invite/validate")]
+    public async Task<IActionResult> ValidateInvitation([FromQuery] string token, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return BadRequest(new { error = "Invitation token is required." });
+        }
+
+        var result = await _userService.ValidateInvitationAsync(token, cancellationToken);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors });
+        }
+
+        return Ok(result.Data);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("invite/accept")]
+    public async Task<IActionResult> AcceptInvitation([FromBody] AcceptInvitationRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _userService.AcceptInvitationAsync(request, cancellationToken);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors });
+        }
+
+        // Automatically issue auth cookies on successful account creation
+        SetTokenCookies(result.Data!);
+        return Ok(new { message = "Account activated successfully." });
     }
 
     [Authorize]

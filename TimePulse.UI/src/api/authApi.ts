@@ -13,6 +13,20 @@ export interface LoginPayload {
   password: string
 }
 
+export interface ValidateInvitationResponse {
+  email: string
+  roles: string[]
+  teamIds: string[]
+  expiresAtUtc: string
+}
+
+export interface AcceptInvitationPayload {
+  token: string
+  fullName: string
+  password: string
+  confirmPassword: string
+}
+
 export const authApi = {
   async getMe(): Promise<UserProfile> {
     const res = await apiFetch('/api/auth/me')
@@ -38,6 +52,31 @@ export const authApi = {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
       throw new Error(data.error || 'Invalid email or password')
+    }
+    return res.json()
+  },
+
+  async validateInvitation(token: string): Promise<ValidateInvitationResponse> {
+    const res = await fetch(`/api/auth/invite/validate?token=${encodeURIComponent(token)}`)
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      const err = data.errors ? data.errors.join(' ') : data.error || 'Invalid or expired invitation link'
+      throw new Error(err)
+    }
+    return res.json()
+  },
+
+  async acceptInvitation(payload: AcceptInvitationPayload): Promise<{ message: string }> {
+    const res = await fetch('/api/auth/invite/accept', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      credentials: 'include',
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      const err = data.errors ? data.errors.join(' ') : data.error || 'Failed to activate account'
+      throw new Error(err)
     }
     return res.json()
   },

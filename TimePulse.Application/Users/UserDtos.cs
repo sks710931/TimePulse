@@ -7,11 +7,32 @@ public record UserDto(
     DateTime CreatedAtUtc,
     IReadOnlyList<string> Roles);
 
-public record CreateUserRequest(
+public record InviteUserRequest(
     string Email,
-    string Password,
+    List<string> Roles,
+    List<Guid>? TeamIds = null);
+
+public record AcceptInvitationRequest(
+    string Token,
     string FullName,
-    string Role);
+    string Password,
+    string ConfirmPassword);
+
+public record ValidateInvitationResponse(
+    string Email,
+    IReadOnlyList<string> Roles,
+    IReadOnlyList<Guid> TeamIds,
+    DateTime ExpiresAtUtc);
+
+public record InvitationDto(
+    Guid Id,
+    string Email,
+    IReadOnlyList<string> Roles,
+    IReadOnlyList<Guid> TeamIds,
+    DateTime CreatedAtUtc,
+    DateTime ExpiresAtUtc,
+    bool IsConsumed,
+    Guid InvitedByUserId);
 
 public record UpdateUserRequest(
     string FullName,

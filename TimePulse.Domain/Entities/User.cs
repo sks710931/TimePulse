@@ -39,6 +39,29 @@ public class User : AggregateRoot<Guid>
         return user;
     }
 
+    public static User CreateFromInvitation(string email, string passwordHash, string fullName, IEnumerable<string> roles)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(email);
+        ArgumentException.ThrowIfNullOrWhiteSpace(passwordHash);
+        ArgumentException.ThrowIfNullOrWhiteSpace(fullName);
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = email.ToLowerInvariant(),
+            PasswordHash = passwordHash,
+            FullName = fullName,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        foreach (var role in roles)
+        {
+            user.AddRole(role);
+        }
+
+        return user;
+    }
+
     public void UpdateFullName(string fullName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fullName);
