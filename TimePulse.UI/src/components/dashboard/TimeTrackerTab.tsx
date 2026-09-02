@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ManualEntryBar } from './ManualEntryBar'
 import { WeekGroup, type DayGroupData } from './WeekGroup'
 import { PaginationControls } from './PaginationControls'
-import { EditTimeEntryModal } from './EditTimeEntryModal'
+import { ToastContainer, useToast } from '../common/Toast'
 import { Alert } from '../common/Alert'
 import { Loader2, Calendar } from 'lucide-react'
 import { timeEntryApi, type TimeEntryDto, type CreateTimeEntryPayload, type UpdateTimeEntryPayload } from '../../api/timeEntryApi'
@@ -24,10 +24,11 @@ export function TimeTrackerTab() {
   const [projects, setProjects] = useState<ProjectDto[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [editingEntry, setEditingEntry] = useState<TimeEntryDto | null>(null)
 
-  const fetchEntries = useCallback(async () => {
-    setIsLoading(true)
+  const { toasts, addToast, removeToast } = useToast()
+
+  const fetchEntries = useCallback(async (quiet = false) => {
+    if (!quiet) setIsLoading(true)
     setError(null)
     try {
       const res = await timeEntryApi.getTimeEntries(page, pageSize)
@@ -37,7 +38,7 @@ export function TimeTrackerTab() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load time entries.')
     } finally {
-      setIsLoading(false)
+      if (!quiet) setIsLoading(false)
     }
   }, [page, pageSize])
 
@@ -159,20 +160,28 @@ export function TimeTrackerTab() {
     setError(null)
     try {
       await timeEntryApi.createTimeEntry(payload)
-      // If adding an entry, go back to page 1 to see the latest entry
+      addToast('Time entry added successfully')
       if (page !== 1) {
         setPage(1)
       } else {
         await fetchEntries()
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to add time entry.')
+      const msg = err instanceof Error ? err.message : 'Failed to add time entry.'
+      setError(msg)
+      addToast(msg, 'error')
     }
   }
 
-  const handleSaveEdit = async (id: string, payload: UpdateTimeEntryPayload) => {
-    await timeEntryApi.updateTimeEntry(id, payload)
-    await fetchEntries()
+  const handleSaveInline = async (id: string, payload: UpdateTimeEntryPayload) => {
+    try {
+      await timeEntryApi.updateTimeEntry(id, payload)
+      addToast('Time entry saved')
+      await fetchEntries(true)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to save changes.'
+      addToast(msg, 'error')
+    }
   }
 
   const handleDeleteEntry = async (id: string) => {
@@ -182,9 +191,12 @@ export function TimeTrackerTab() {
     setError(null)
     try {
       await timeEntryApi.deleteTimeEntry(id)
-      await fetchEntries()
+      addToast('Time entry deleted')
+      await fetchEntries(true)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to delete time entry.')
+      const msg = err instanceof Error ? err.message : 'Failed to delete time entry.'
+      setError(msg)
+      addToast(msg, 'error')
     }
   }
 
@@ -228,7 +240,8 @@ export function TimeTrackerTab() {
                 weekLabel={weekGroup.weekLabel}
                 totalMinutes={weekGroup.totalMinutes}
                 dayGroups={weekGroup.dayGroups}
-                onEdit={(entry) => setEditingEntry(entry)}
+                projects={projects}
+                onSave={handleSaveInline}
                 onDelete={handleDeleteEntry}
               />
             ))}
@@ -247,14 +260,8 @@ export function TimeTrackerTab() {
         />
       </div>
 
-      {/* Edit Entry Modal */}
-      <EditTimeEntryModal
-        isOpen={Boolean(editingEntry)}
-        entry={editingEntry}
-        projects={projects}
-        onClose={() => setEditingEntry(null)}
-        onSave={handleSaveEdit}
-      />
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onDismiss={removeToast} />
     </div>
   )
 }

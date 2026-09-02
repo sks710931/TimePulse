@@ -1,5 +1,6 @@
 import { DayGroup } from './DayGroup'
-import type { TimeEntryDto } from '../../api/timeEntryApi'
+import type { TimeEntryDto, UpdateTimeEntryPayload } from '../../api/timeEntryApi'
+import type { ProjectDto } from '../../api/projectApi'
 
 export interface DayGroupData {
   dateLabel: string
@@ -10,7 +11,8 @@ interface WeekGroupProps {
   weekLabel: string
   totalMinutes: number
   dayGroups: DayGroupData[]
-  onEdit: (entry: TimeEntryDto) => void
+  projects: ProjectDto[]
+  onSave: (id: string, payload: UpdateTimeEntryPayload) => Promise<void>
   onDelete: (id: string) => void
 }
 
@@ -18,7 +20,8 @@ export function WeekGroup({
   weekLabel,
   totalMinutes,
   dayGroups,
-  onEdit,
+  projects,
+  onSave,
   onDelete,
 }: WeekGroupProps) {
   const formatTotalTime = (minutes: number) => {
@@ -49,7 +52,8 @@ export function WeekGroup({
             key={group.dateLabel}
             dateLabel={group.dateLabel}
             entries={group.entries}
-            onEdit={onEdit}
+            projects={projects}
+            onSave={onSave}
             onDelete={onDelete}
           />
         ))}

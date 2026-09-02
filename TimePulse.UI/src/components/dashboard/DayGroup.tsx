@@ -1,24 +1,27 @@
 import { TimeEntryRow } from './TimeEntryRow'
-import type { TimeEntryDto } from '../../api/timeEntryApi'
+import type { TimeEntryDto, UpdateTimeEntryPayload } from '../../api/timeEntryApi'
+import type { ProjectDto } from '../../api/projectApi'
 
 interface DayGroupProps {
   dateLabel: string
   entries: TimeEntryDto[]
-  onEdit: (entry: TimeEntryDto) => void
+  projects: ProjectDto[]
+  onSave: (id: string, payload: UpdateTimeEntryPayload) => Promise<void>
   onDelete: (id: string) => void
 }
 
 export function DayGroup({
   dateLabel,
   entries,
-  onEdit,
+  projects,
+  onSave,
   onDelete,
 }: DayGroupProps) {
   const totalMinutes = entries.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0)
 
   const formatTotalTime = (minutes: number) => {
     const hrs = Math.floor(minutes / 60)
-    const mins = totalMinutes % 60
+    const mins = minutes % 60
     return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:00`
   }
 
@@ -41,7 +44,8 @@ export function DayGroup({
           <TimeEntryRow
             key={entry.id}
             entry={entry}
-            onEdit={onEdit}
+            projects={projects}
+            onSave={onSave}
             onDelete={onDelete}
           />
         ))}
