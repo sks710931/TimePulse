@@ -85,9 +85,12 @@ public static class HostingExtensions
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
+            app.UseHttpsRedirection();
         }
-
-        app.UseHttpsRedirection();
+        else if (app.Configuration.GetValue<bool>("EnableHttpsRedirection", false))
+        {
+            app.UseHttpsRedirection();
+        }
 
         app.UseDefaultFiles();
         app.UseStaticFiles();

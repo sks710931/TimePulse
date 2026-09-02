@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: skumar
+      POSTGRES_PASSWORD: Rachel@123#
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - "D:/docker-volumes/postgres:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skumar -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4
+    restart: always
+    ports:
+      - "8084:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: skumar@gleason.com
+      PGADMIN_DEFAULT_PASSWORD: Rachel@123#
+    volumes:
+      - "D:/docker-volumes/pgadmin4:/var/lib/pgadmin"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  timepulse:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: timepulse
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=TimePulseDb;Username=skumar;Password=Rachel@123#;
+      - Jwt__Key=TimePulse-Super-Secret-Key-That-Is-At-Least-32-Bytes-Long!
+      - Jwt__Issuer=TimePulse
+      - Jwt__Audience=TimePulse
+      - Jwt__AccessTokenExpirationMinutes=15
+      - Jwt__RefreshTokenExpirationDays=7
+    depends_on:
+      postgres:
+        condition: service_healthy
