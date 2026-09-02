@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TimePulse.UI\TimePulse.UI.esproj">
+    <ProjectReference Include="..\TimePulse.UI\TimePulse.UI.esproj" Condition="'$(BuildingInsideDocker)' != 'true'">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\TimePulse.Application\TimePulse.Application.csproj" />

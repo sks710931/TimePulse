@@ -22,10 +22,8 @@ COPY TimePulse.Domain/TimePulse.Domain.csproj TimePulse.Domain/
 COPY TimePulse.Application/TimePulse.Application.csproj TimePulse.Application/
 COPY TimePulse.Infrastructure/TimePulse.Infrastructure.csproj TimePulse.Infrastructure/
 COPY TimePulse.API/TimePulse.API.csproj TimePulse.API/
-COPY TimePulse.UI/TimePulse.UI.esproj TimePulse.UI/
-COPY TimePulse.UI/package*.json TimePulse.UI/
 
-RUN dotnet restore TimePulse.API/TimePulse.API.csproj
+RUN dotnet restore TimePulse.API/TimePulse.API.csproj -p:BuildingInsideDocker=true
 
 # Copy source code
 COPY TimePulse.Domain/ TimePulse.Domain/
@@ -36,8 +34,8 @@ COPY TimePulse.API/ TimePulse.API/
 # Copy compiled frontend from Stage 1 into TimePulse.API/wwwroot
 COPY --from=ui-builder /src/TimePulse.API/wwwroot ./TimePulse.API/wwwroot
 
-# Publish the .NET application without re-running npm inside dotnet
-RUN dotnet publish TimePulse.API/TimePulse.API.csproj -c Release -o /app/publish --no-restore -p:ShouldRunBuildScript=false
+# Publish the .NET application (skipping the UI esproj since frontend is already built in Stage 1)
+RUN dotnet publish TimePulse.API/TimePulse.API.csproj -c Release -o /app/publish --no-restore -p:BuildingInsideDocker=true
 
 # ==========================================
 # Stage 3: Final Lean Runtime Image
