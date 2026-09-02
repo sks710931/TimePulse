@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Tag, DollarSign, Calendar, Loader2 } from 'lucide-react'
+import { Tag, Calendar, Loader2 } from 'lucide-react'
 import { ProjectPickerDropdown } from './ProjectPickerDropdown'
 import type { ProjectDto } from '../../api/projectApi'
 import type { CreateTimeEntryPayload } from '../../api/timeEntryApi'
@@ -7,22 +7,14 @@ import type { CreateTimeEntryPayload } from '../../api/timeEntryApi'
 interface ManualEntryBarProps {
   projects: ProjectDto[]
   onAddEntry: (payload: CreateTimeEntryPayload) => Promise<void>
-  initialData?: {
-    description?: string
-    projectId?: string | null
-    isBillable?: boolean
-    tag?: string | null
-  } | null
 }
 
 export function ManualEntryBar({
   projects,
   onAddEntry,
-  initialData,
 }: ManualEntryBarProps) {
   const [description, setDescription] = useState('')
   const [projectId, setProjectId] = useState<string | null>(null)
-  const [isBillable, setIsBillable] = useState(false)
   const [tag, setTag] = useState<string>('')
   const [isTagPopoverOpen, setIsTagPopoverOpen] = useState(false)
 
@@ -38,16 +30,6 @@ export function ManualEntryBar({
   const [durationStr, setDurationStr] = useState('01:00:00')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const tagRef = useRef<HTMLDivElement>(null)
-
-  // Listen to initialData changes (e.g. when user clicks Duplicate/Play on an entry)
-  useEffect(() => {
-    if (initialData) {
-      if (initialData.description !== undefined) setDescription(initialData.description)
-      if (initialData.projectId !== undefined) setProjectId(initialData.projectId)
-      if (initialData.isBillable !== undefined) setIsBillable(initialData.isBillable)
-      if (initialData.tag !== undefined) setTag(initialData.tag || '')
-    }
-  }, [initialData])
 
   // Click outside to close tag popover
   useEffect(() => {
@@ -119,7 +101,7 @@ export function ManualEntryBar({
       await onAddEntry({
         description: description.trim(),
         projectId,
-        isBillable,
+        isBillable: false,
         tag: tag.trim() || null,
         startTimeUtc: start.toISOString(),
         endTimeUtc: end.toISOString(),
@@ -135,7 +117,7 @@ export function ManualEntryBar({
   return (
     <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm text-slate-900 dark:text-white transition-colors duration-200">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-        {/* Description & Project & Tag & Billable */}
+        {/* Description & Project & Tag */}
         <div className="flex-1 flex flex-wrap items-center gap-2.5 min-w-0">
           <input
             type="text"
@@ -212,20 +194,6 @@ export function ManualEntryBar({
               </div>
             )}
           </div>
-
-          {/* Billable Toggle Button ($) */}
-          <button
-            type="button"
-            onClick={() => setIsBillable(!isBillable)}
-            title={isBillable ? 'Billable (Click to toggle)' : 'Non-billable (Click to make billable)'}
-            className={`p-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              isBillable
-                ? 'bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 shadow-2xs'
-                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent'
-            }`}
-          >
-            <DollarSign className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Time, Date, Duration & ADD Button */}

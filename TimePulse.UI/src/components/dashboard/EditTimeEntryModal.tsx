@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Loader2, DollarSign, Calendar, Clock } from 'lucide-react'
+import { X, Loader2, Calendar, Clock } from 'lucide-react'
 import { ProjectPickerDropdown } from './ProjectPickerDropdown'
 import type { ProjectDto } from '../../api/projectApi'
 import type { TimeEntryDto, UpdateTimeEntryPayload } from '../../api/timeEntryApi'
@@ -21,7 +21,6 @@ export function EditTimeEntryModal({
 }: EditTimeEntryModalProps) {
   const [description, setDescription] = useState('')
   const [projectId, setProjectId] = useState<string | null>(null)
-  const [isBillable, setIsBillable] = useState(false)
   const [tag, setTag] = useState('')
   const [dateStr, setDateStr] = useState('')
   const [startTimeStr, setStartTimeStr] = useState('')
@@ -33,7 +32,6 @@ export function EditTimeEntryModal({
     if (entry && isOpen) {
       setDescription(entry.description || '')
       setProjectId(entry.projectId || null)
-      setIsBillable(entry.isBillable || false)
       setTag(entry.tag || '')
 
       const start = new Date(entry.startTimeUtc)
@@ -77,7 +75,7 @@ export function EditTimeEntryModal({
       await onSave(entry.id, {
         description: description.trim(),
         projectId,
-        isBillable,
+        isBillable: false,
         tag: tag.trim() || null,
         startTimeUtc: start.toISOString(),
         endTimeUtc: end.toISOString(),
@@ -200,22 +198,6 @@ export function EditTimeEntryModal({
                 />
               </div>
             </div>
-          </div>
-
-          {/* Billable Toggle */}
-          <div className="flex items-center gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => setIsBillable(!isBillable)}
-              className={`p-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer ${
-                isBillable
-                  ? 'bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700'
-              }`}
-            >
-              <DollarSign className="w-4 h-4" />
-              <span>{isBillable ? 'Billable' : 'Non-billable'}</span>
-            </button>
           </div>
 
           {/* Buttons */}

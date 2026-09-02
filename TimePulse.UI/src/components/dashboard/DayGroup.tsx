@@ -4,7 +4,6 @@ import type { TimeEntryDto } from '../../api/timeEntryApi'
 interface DayGroupProps {
   dateLabel: string
   entries: TimeEntryDto[]
-  onDuplicate: (entry: TimeEntryDto) => void
   onEdit: (entry: TimeEntryDto) => void
   onDelete: (id: string) => void
 }
@@ -12,7 +11,6 @@ interface DayGroupProps {
 export function DayGroup({
   dateLabel,
   entries,
-  onDuplicate,
   onEdit,
   onDelete,
 }: DayGroupProps) {
@@ -20,7 +18,7 @@ export function DayGroup({
 
   const formatTotalTime = (minutes: number) => {
     const hrs = Math.floor(minutes / 60)
-    const mins = minutes % 60
+    const mins = totalMinutes % 60
     return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:00`
   }
 
@@ -43,7 +41,6 @@ export function DayGroup({
           <TimeEntryRow
             key={entry.id}
             entry={entry}
-            onDuplicate={onDuplicate}
             onEdit={onEdit}
             onDelete={onDelete}
           />

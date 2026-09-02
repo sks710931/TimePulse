@@ -1,17 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
-import { Tag, DollarSign, Play, MoreVertical, Edit2, Trash2 } from 'lucide-react'
+import { Tag, MoreVertical, Edit2, Trash2 } from 'lucide-react'
 import type { TimeEntryDto } from '../../api/timeEntryApi'
 
 interface TimeEntryRowProps {
   entry: TimeEntryDto
-  onDuplicate: (entry: TimeEntryDto) => void
   onEdit: (entry: TimeEntryDto) => void
   onDelete: (id: string) => void
 }
 
 export function TimeEntryRow({
   entry,
-  onDuplicate,
   onEdit,
   onDelete,
 }: TimeEntryRowProps) {
@@ -63,7 +61,7 @@ export function TimeEntryRow({
         )}
       </div>
 
-      {/* Middle/Right: Tag, Billable, Time range, Duration, Duplicate, Menu */}
+      {/* Middle/Right: Tag, Time range, Duration, Menu */}
       <div className="flex items-center justify-between sm:justify-end gap-3.5 shrink-0">
         {/* Tag */}
         {entry.tag ? (
@@ -75,15 +73,6 @@ export function TimeEntryRow({
           <Tag className="w-3.5 h-3.5 text-slate-300 dark:text-slate-700" />
         )}
 
-        {/* Billable */}
-        <DollarSign
-          className={`w-3.5 h-3.5 ${
-            entry.isBillable
-              ? 'text-sky-500 font-bold'
-              : 'text-slate-300 dark:text-slate-700'
-          }`}
-        />
-
         {/* Time Range */}
         <span className="font-mono text-slate-500 dark:text-slate-400 text-xs tracking-tight">
           {formatTimeOnly(entry.startTimeUtc)} - {formatTimeOnly(entry.endTimeUtc)}
@@ -93,16 +82,6 @@ export function TimeEntryRow({
         <span className="font-mono font-bold text-slate-900 dark:text-white text-xs w-16 text-right">
           {formatDuration(entry.durationMinutes)}
         </span>
-
-        {/* Duplicate / Re-add icon (Play style) */}
-        <button
-          type="button"
-          onClick={() => onDuplicate(entry)}
-          title="Reuse this time entry"
-          className="p-1.5 text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-        >
-          <Play className="w-3.5 h-3.5" />
-        </button>
 
         {/* 3-dots Menu */}
         <div className="relative" ref={menuRef}>

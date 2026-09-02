@@ -15,12 +15,6 @@ export function TimeTrackerTab() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editingEntry, setEditingEntry] = useState<TimeEntryDto | null>(null)
-  const [duplicatePreset, setDuplicatePreset] = useState<{
-    description?: string
-    projectId?: string | null
-    isBillable?: boolean
-    tag?: string | null
-  } | null>(null)
 
   // Calculate Monday to Sunday date range for the current weekOffset
   const { start: weekStart, end: weekEnd } = useMemo(() => {
@@ -126,16 +120,6 @@ export function TimeTrackerTab() {
     }
   }
 
-  const handleDuplicate = (entry: TimeEntryDto) => {
-    setDuplicatePreset({
-      description: entry.description,
-      projectId: entry.projectId,
-      isBillable: entry.isBillable,
-      tag: entry.tag,
-    })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
   const handleSaveEdit = async (id: string, payload: UpdateTimeEntryPayload) => {
     await timeEntryApi.updateTimeEntry(id, payload)
     await fetchEntries()
@@ -160,7 +144,6 @@ export function TimeTrackerTab() {
       <ManualEntryBar
         projects={projects}
         onAddEntry={handleAddEntry}
-        initialData={duplicatePreset}
       />
 
       {error && <Alert type="error" message={error} />}
@@ -200,7 +183,6 @@ export function TimeTrackerTab() {
                 key={group.label}
                 dateLabel={group.label}
                 entries={group.entries}
-                onDuplicate={handleDuplicate}
                 onEdit={(entry) => setEditingEntry(entry)}
                 onDelete={handleDeleteEntry}
               />
