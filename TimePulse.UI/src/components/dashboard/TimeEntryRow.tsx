@@ -255,30 +255,40 @@ export function TimeEntryRow({
         </div>
 
         {/* Inline Time Range: start - end */}
-        <div className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-mono text-xs bg-slate-50 dark:bg-slate-800/40 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700/60 focus-within:border-sky-400 dark:focus-within:border-sky-500">
+        <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-mono text-xs bg-slate-50 dark:bg-slate-800/40 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700/60 focus-within:border-sky-400 dark:focus-within:border-sky-500 shrink-0">
           <input
             type="time"
             value={startTimeStr}
             onChange={(e) => setStartTimeStr(e.target.value)}
+            onClick={(e) => {
+              try {
+                e.currentTarget.showPicker()
+              } catch {}
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') e.currentTarget.blur()
             }}
-            className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none w-[58px] cursor-pointer text-xs"
+            className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none w-[54px] text-center cursor-pointer text-xs [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           <span className="text-slate-400 dark:text-slate-500">-</span>
           <input
             type="time"
             value={endTimeStr}
             onChange={(e) => setEndTimeStr(e.target.value)}
+            onClick={(e) => {
+              try {
+                e.currentTarget.showPicker()
+              } catch {}
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') e.currentTarget.blur()
             }}
-            className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none w-[58px] cursor-pointer text-xs"
+            className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none w-[54px] text-center cursor-pointer text-xs [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
         </div>
 
         {/* Duration */}
-        <span className="font-mono font-bold text-slate-900 dark:text-white text-xs w-16 text-right">
+        <span className="font-mono font-bold text-slate-900 dark:text-white text-xs w-20 min-w-[76px] text-right shrink-0">
           {formatDuration(currentDurationMinutes)}
         </span>
 
