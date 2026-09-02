@@ -30,6 +30,15 @@ export function ManualEntryBar({
   const [durationStr, setDurationStr] = useState('01:00:00')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const tagRef = useRef<HTMLDivElement>(null)
+  const dateInputRef = useRef<HTMLInputElement>(null)
+
+  const openDatePicker = () => {
+    try {
+      dateInputRef.current?.showPicker()
+    } catch {
+      dateInputRef.current?.focus()
+    }
+  }
 
   // Click outside to close tag popover
   useEffect(() => {
@@ -216,11 +225,19 @@ export function ManualEntryBar({
           </div>
 
           {/* Date Picker (Calendar + Today/Date) */}
-          <div className="relative flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div
+            onClick={openDatePicker}
+            className="relative flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer transition-colors"
+          >
             <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
             <input
+              ref={dateInputRef}
               type="date"
               value={dateStr}
+              onClick={(e) => {
+                e.stopPropagation()
+                openDatePicker()
+              }}
               onChange={(e) => setDateStr(e.target.value)}
               className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none text-xs cursor-pointer"
             />

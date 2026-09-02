@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { X, Loader2, Calendar, Clock } from 'lucide-react'
 import { ProjectPickerDropdown } from './ProjectPickerDropdown'
 import type { ProjectDto } from '../../api/projectApi'
@@ -27,6 +27,15 @@ export function EditTimeEntryModal({
   const [endTimeStr, setEndTimeStr] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const dateInputRef = useRef<HTMLInputElement>(null)
+
+  const openDatePicker = () => {
+    try {
+      dateInputRef.current?.showPicker()
+    } catch {
+      dateInputRef.current?.focus()
+    }
+  }
 
   useEffect(() => {
     if (entry && isOpen) {
@@ -158,11 +167,19 @@ export function EditTimeEntryModal({
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Date
               </label>
-              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-700 rounded-xl">
+              <div
+                onClick={openDatePicker}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 rounded-xl cursor-pointer transition-colors"
+              >
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
                 <input
+                  ref={dateInputRef}
                   type="date"
                   value={dateStr}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    openDatePicker()
+                  }}
                   onChange={(e) => setDateStr(e.target.value)}
                   className="bg-transparent text-xs text-slate-900 dark:text-white focus:outline-none w-full cursor-pointer"
                 />
