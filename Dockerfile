@@ -16,7 +16,8 @@ RUN npm run build
 FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS dotnet-builder
 WORKDIR /src
 
-# Copy project files for caching dependency restore
+# Copy props and project files for caching dependency restore
+COPY Directory.Packages.props ./
 COPY TimePulse.Domain/TimePulse.Domain.csproj TimePulse.Domain/
 COPY TimePulse.Application/TimePulse.Application.csproj TimePulse.Application/
 COPY TimePulse.Infrastructure/TimePulse.Infrastructure.csproj TimePulse.Infrastructure/
