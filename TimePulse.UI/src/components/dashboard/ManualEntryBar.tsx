@@ -133,7 +133,7 @@ export function ManualEntryBar({
   }
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 sm:p-4 shadow-sm text-white">
+    <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm text-slate-900 dark:text-white transition-colors duration-200">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         {/* Description & Project & Tag & Billable */}
         <div className="flex-1 flex flex-wrap items-center gap-2.5 min-w-0">
@@ -148,7 +148,7 @@ export function ManualEntryBar({
                 handleAdd()
               }
             }}
-            className="flex-1 min-w-[200px] bg-transparent text-sm text-white placeholder-slate-400 focus:outline-none px-2 py-1.5"
+            className="flex-1 min-w-[200px] bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none px-2 py-1.5"
           />
 
           {/* Project Picker */}
@@ -165,19 +165,21 @@ export function ManualEntryBar({
               type="button"
               onClick={() => setIsTagPopoverOpen(!isTagPopoverOpen)}
               title={tag ? `Tag: ${tag}` : 'Add Tag'}
-              className={`p-2 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
+              className={`p-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
                 tag
-                  ? 'bg-purple-950/60 text-purple-300 border border-purple-800/80'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-transparent'
+                  ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/80'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent'
               }`}
             >
               <Tag className="w-4 h-4" />
-              {tag && <span className="max-w-[70px] truncate text-[11px]">{tag}</span>}
+              {tag && <span className="max-w-[80px] truncate text-[11px]">{tag}</span>}
             </button>
 
             {isTagPopoverOpen && (
-              <div className="absolute left-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-xl p-2.5 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-100">
-                <div className="text-[11px] text-slate-300 font-semibold mb-1.5">Enter Tag:</div>
+              <div className="absolute left-0 mt-2 w-52 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold mb-1.5">
+                  Enter Tag:
+                </div>
                 <input
                   type="text"
                   placeholder="e.g. Design, Meeting"
@@ -187,14 +189,14 @@ export function ManualEntryBar({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') setIsTagPopoverOpen(false)
                   }}
-                  className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                  className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-purple-500"
                 />
                 <div className="mt-2 flex items-center justify-end gap-1.5">
                   {tag && (
                     <button
                       type="button"
                       onClick={() => setTag('')}
-                      className="px-2 py-1 text-[10px] text-slate-400 hover:text-rose-400"
+                      className="px-2 py-1 text-[10px] text-slate-400 hover:text-rose-500"
                     >
                       Clear
                     </button>
@@ -202,7 +204,7 @@ export function ManualEntryBar({
                   <button
                     type="button"
                     onClick={() => setIsTagPopoverOpen(false)}
-                    className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-[10px] font-bold"
+                    className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-[10px] font-bold cursor-pointer"
                   >
                     Done
                   </button>
@@ -216,10 +218,10 @@ export function ManualEntryBar({
             type="button"
             onClick={() => setIsBillable(!isBillable)}
             title={isBillable ? 'Billable (Click to toggle)' : 'Non-billable (Click to make billable)'}
-            className={`p-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`p-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               isBillable
-                ? 'bg-sky-950/60 text-sky-400 border border-sky-800 shadow-xs'
-                : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800 border border-transparent'
+                ? 'bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 shadow-2xs'
+                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent'
             }`}
           >
             <DollarSign className="w-4 h-4" />
@@ -227,32 +229,32 @@ export function ManualEntryBar({
         </div>
 
         {/* Time, Date, Duration & ADD Button */}
-        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-800">
+        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800">
           {/* Time range: 10:40 - 11:40 */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-300 font-mono bg-slate-950/60 px-2.5 py-1.5 rounded-lg border border-slate-800">
+          <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-mono bg-slate-50 dark:bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800">
             <input
               type="time"
               value={startTimeStr}
               onChange={(e) => setStartTimeStr(e.target.value)}
-              className="bg-transparent text-white focus:outline-none w-[54px] cursor-pointer"
+              className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none w-[66px] cursor-pointer text-xs"
             />
-            <span className="text-slate-500">-</span>
+            <span className="text-slate-400 dark:text-slate-600">-</span>
             <input
               type="time"
               value={endTimeStr}
               onChange={(e) => setEndTimeStr(e.target.value)}
-              className="bg-transparent text-white focus:outline-none w-[54px] cursor-pointer"
+              className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none w-[66px] cursor-pointer text-xs"
             />
           </div>
 
           {/* Date Picker (Calendar + Today/Date) */}
-          <div className="relative flex items-center gap-1 text-xs text-slate-300 bg-slate-950/60 px-2.5 py-1.5 rounded-lg border border-slate-800">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+          <div className="relative flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
             <input
               type="date"
               value={dateStr}
               onChange={(e) => setDateStr(e.target.value)}
-              className="bg-transparent text-white focus:outline-none text-xs cursor-pointer"
+              className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none text-xs cursor-pointer"
             />
           </div>
 
@@ -262,7 +264,7 @@ export function ManualEntryBar({
             value={durationStr}
             onChange={(e) => handleDurationChange(e.target.value)}
             title="Duration (hh:mm:ss)"
-            className="w-20 px-2 py-1.5 text-center font-mono font-bold text-sm bg-transparent text-white focus:outline-none focus:bg-slate-800 rounded-lg"
+            className="w-24 px-2 py-1.5 text-center font-mono font-bold text-sm bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-sky-500 rounded-xl"
           />
 
           {/* ADD Button */}
@@ -270,7 +272,7 @@ export function ManualEntryBar({
             type="button"
             onClick={handleAdd}
             disabled={isSubmitting}
-            className="px-5 py-2 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer uppercase tracking-wider"
+            className="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer uppercase tracking-wider"
           >
             {isSubmitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
