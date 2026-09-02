@@ -68,6 +68,12 @@ public class User : AggregateRoot<Guid>
         FullName = fullName.Trim();
     }
 
+    public void UpdatePassword(string passwordHash)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(passwordHash);
+        PasswordHash = passwordHash;
+    }
+
     public void SetRoles(IEnumerable<string> roles)
     {
         ArgumentNullException.ThrowIfNull(roles);

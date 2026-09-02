@@ -15,6 +15,7 @@ public static class HostingExtensions
         // Add services to the container.
         builder.Services.AddControllers();
         builder.Services.AddOpenApi();
+        builder.Services.AddHttpContextAccessor();
 
         // JWT Authentication
         var jwtKey = builder.Configuration["Jwt:Key"]!;

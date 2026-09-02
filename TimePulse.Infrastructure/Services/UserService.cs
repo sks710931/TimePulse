@@ -56,6 +56,7 @@ public class UserService : IUserService
         InviteUserRequest request,
         Guid callerUserId,
         bool isCallerAdmin,
+        string? requestBaseUrl = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Email))
@@ -128,10 +129,24 @@ public class UserService : IUserService
             await _invitationRepository.AddAsync(invitation, cancellationToken);
             await _invitationRepository.SaveChangesAsync(cancellationToken);
 
-            // Construct invitation link
-            var baseUrl = _configuration["App:BaseUrl"]
-                ?? _configuration["ClientUrl"]
-                ?? "http://localhost:5173";
+            // Construct invitation link: check appsettings, then caller request URL, then fallback
+            string baseUrl;
+            if (!string.IsNullOrWhiteSpace(_configuration["App:BaseUrl"]))
+            {
+                baseUrl = _configuration["App:BaseUrl"]!;
+            }
+            else if (!string.IsNullOrWhiteSpace(_configuration["ClientUrl"]))
+            {
+                baseUrl = _configuration["ClientUrl"]!;
+            }
+            else if (!string.IsNullOrWhiteSpace(requestBaseUrl))
+            {
+                baseUrl = requestBaseUrl;
+            }
+            else
+            {
+                baseUrl = "http://localhost:5173";
+            }
             baseUrl = baseUrl.TrimEnd('/');
             var inviteUrl = $"{baseUrl}/invite/accept?token={rawToken}";
 
@@ -197,11 +212,6 @@ public class UserService : IUserService
             return Result<ValidateInvitationResponse>.Failure("This invitation link has expired. Please request a new invitation from your administrator.");
         }
 
-        if (await _userRepository.ExistsAsync(invitation.Email, cancellationToken))
-        {
-            return Result<ValidateInvitationResponse>.Failure("A user with this email has already been activated.");
-        }
-
         var response = new ValidateInvitationResponse(
             invitation.Email,
             invitation.GetRoles(),
@@ -238,28 +248,46 @@ public class UserService : IUserService
         var tokenHash = HashToken(request.Token.Trim());
         var invitation = await _invitationRepository.GetByTokenHashAsync(tokenHash, cancellationToken);
 
-        if (invitation is null || !invitation.IsValid)
+        if (invitation is null)
         {
-            return Result<AuthResult>.Failure("This invitation is invalid or has expired.");
+            return Result<AuthResult>.Failure("This invitation is invalid.");
         }
 
-        if (await _userRepository.ExistsAsync(invitation.Email, cancellationToken))
+        if (invitation.IsExpired)
+        {
+            return Result<AuthResult>.Failure("This invitation link has expired. Please request a new invitation from your administrator.");
+        }
+
+        var existingUser = await _userRepository.GetByEmailAsync(invitation.Email, cancellationToken);
+        if (existingUser is not null && invitation.IsConsumed)
         {
             return Result<AuthResult>.Failure("A user with this email has already been activated.");
         }
 
         try
         {
-            // 1. Create user with assigned roles
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-            var user = User.CreateFromInvitation(
-                invitation.Email,
-                passwordHash,
-                request.FullName.Trim(),
-                invitation.GetRoles());
+            User user;
 
-            await _userRepository.AddAsync(user, cancellationToken);
-            await _userRepository.SaveChangesAsync(cancellationToken);
+            if (existingUser is null)
+            {
+                // 1. Create new user with assigned roles
+                user = User.CreateFromInvitation(
+                    invitation.Email,
+                    passwordHash,
+                    request.FullName.Trim(),
+                    invitation.GetRoles());
+
+                await _userRepository.AddAsync(user, cancellationToken);
+            }
+            else
+            {
+                // Self-healing: user record was partially created in a previous attempt
+                user = existingUser;
+                user.UpdateFullName(request.FullName.Trim());
+                user.UpdatePassword(passwordHash);
+                user.SetRoles(invitation.GetRoles());
+            }
 
             // 2. Add user to assigned teams
             var teamIds = invitation.GetTeamIds();
@@ -267,18 +295,15 @@ public class UserService : IUserService
             {
                 await _teamRepository.AddMemberAsync(teamId, user.Id, cancellationToken);
             }
-            if (teamIds.Count > 0)
-            {
-                await _teamRepository.SaveChangesAsync(cancellationToken);
-            }
 
             // 3. Mark invitation consumed
             invitation.Consume();
-            await _invitationRepository.SaveChangesAsync(cancellationToken);
 
-            // 4. Generate login tokens for immediate auto-login
-            var authResult = GenerateTokens(user);
+            // 4. Save User, TeamMembers, and Invitation changes in ONE atomic transaction
             await _userRepository.SaveChangesAsync(cancellationToken);
+
+            // 5. Generate login tokens for immediate auto-login
+            var authResult = GenerateTokens(user);
 
             return Result<AuthResult>.Success(authResult);
         }

@@ -11,6 +11,8 @@ public class UserInvitationConfiguration : IEntityTypeConfiguration<UserInvitati
         builder.ToTable("UserInvitations");
 
         builder.HasKey(i => i.Id);
+        builder.Property(i => i.Id)
+            .ValueGeneratedNever();
 
         builder.Property(i => i.Email)
             .IsRequired()
@@ -46,5 +48,9 @@ public class UserInvitationConfiguration : IEntityTypeConfiguration<UserInvitati
             .HasDefaultValue(false);
 
         builder.Property(i => i.ConsumedAtUtc);
+
+        builder.Ignore(i => i.IsExpired);
+        builder.Ignore(i => i.IsValid);
+        builder.Ignore(i => i.DomainEvents);
     }
 }

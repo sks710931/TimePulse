@@ -11,6 +11,8 @@ public class TeamMemberConfiguration : IEntityTypeConfiguration<TeamMember>
         builder.ToTable("TeamMembers");
 
         builder.HasKey(tm => tm.Id);
+        builder.Property(tm => tm.Id)
+            .ValueGeneratedNever();
 
         builder.Property(tm => tm.JoinedAtUtc)
             .IsRequired();

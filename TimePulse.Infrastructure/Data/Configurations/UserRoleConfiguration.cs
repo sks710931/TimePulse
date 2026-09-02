@@ -11,6 +11,8 @@ public class UserRoleConfiguration : IEntityTypeConfiguration<UserRole>
         builder.ToTable("UserRoles");
 
         builder.HasKey(ur => ur.Id);
+        builder.Property(ur => ur.Id)
+            .ValueGeneratedNever();
 
         builder.Property(ur => ur.Role)
             .IsRequired()

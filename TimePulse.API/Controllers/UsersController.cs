@@ -51,7 +51,8 @@ public class UsersController : ControllerBase
         var isCallerAdmin = User.IsInRole(Roles.Admin)
             || User.Claims.Any(c => (c.Type == ClaimTypes.Role || c.Type == "role") && c.Value.Equals(Roles.Admin, StringComparison.OrdinalIgnoreCase));
 
-        var result = await _userService.InviteUserAsync(request, callerUserId, isCallerAdmin, cancellationToken);
+        var requestBaseUrl = $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
+        var result = await _userService.InviteUserAsync(request, callerUserId, isCallerAdmin, requestBaseUrl, cancellationToken);
 
         if (!result.Succeeded)
         {
