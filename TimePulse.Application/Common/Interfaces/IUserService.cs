@@ -17,4 +17,5 @@ public interface IUserService
     Task<Result<UserDto>> UpdateUserAsync(Guid targetUserId, UpdateUserRequest request, Guid callerUserId, bool isCallerAdmin, bool isCallerManager, CancellationToken cancellationToken = default);
     Task<Result<UserDto>> AssignRoleAsync(Guid userId, string role, CancellationToken cancellationToken = default);
     Task<Result<UserDto>> RemoveRoleAsync(Guid userId, string role, CancellationToken cancellationToken = default);
+    Task<Result<bool>> DeleteUserAsync(Guid targetUserId, Guid callerUserId, bool isCallerAdmin, CancellationToken cancellationToken = default);
 }

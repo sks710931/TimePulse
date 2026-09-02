@@ -14,5 +14,6 @@ public interface ITeamRepository
     Task SetMembersAsync(Guid teamId, IEnumerable<Guid> userIds, CancellationToken cancellationToken = default);
     Task AddMemberAsync(Guid teamId, Guid userId, CancellationToken cancellationToken = default);
     Task SetProjectsAsync(Guid teamId, IEnumerable<Guid> projectIds, CancellationToken cancellationToken = default);
+    Task RemoveAllMembershipsForUserAsync(Guid userId, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

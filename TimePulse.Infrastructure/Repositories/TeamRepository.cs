@@ -121,6 +121,18 @@ public class TeamRepository : ITeamRepository
         }
     }
 
+    public async Task RemoveAllMembershipsForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var memberships = await _context.TeamMembers
+            .Where(tm => tm.UserId == userId)
+            .ToListAsync(cancellationToken);
+
+        if (memberships.Count > 0)
+        {
+            _context.TeamMembers.RemoveRange(memberships);
+        }
+    }
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);

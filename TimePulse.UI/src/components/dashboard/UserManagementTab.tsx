@@ -5,9 +5,12 @@ import { AcceptedInvitationsTable } from './AcceptedInvitationsTable'
 import { UserNavTabs, type UserTabId } from './UserNavTabs'
 import { CreateUserModal } from './CreateUserModal'
 import { EditUserModal } from './EditUserModal'
+import { DeleteUserModal } from './DeleteUserModal'
 import { Alert } from '../common/Alert'
 import { Users, UserPlus, RefreshCw, Loader2 } from 'lucide-react'
 import { userApi, type UserItemDto, type InvitationItemDto } from '../../api/userApi'
+import { useAppDispatch } from '../../store/hooks'
+import { logoutUser } from '../../store/slices/authSlice'
 
 interface UserManagementTabProps {
   users: UserItemDto[]
@@ -28,9 +31,11 @@ export function UserManagementTab({
   isManager,
   currentUserId,
 }: UserManagementTabProps) {
+  const dispatch = useAppDispatch()
   const [activeTab, setActiveTab] = useState<UserTabId>('users')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<UserItemDto | null>(null)
+  const [deletingUser, setDeletingUser] = useState<UserItemDto | null>(null)
 
   // Invitations state
   const [pendingInvitations, setPendingInvitations] = useState<InvitationItemDto[]>([])
@@ -92,6 +97,23 @@ export function UserManagementTab({
 
   const handleEditUser = (user: UserItemDto) => {
     setEditingUser(user)
+  }
+
+  const handleDeleteUser = (user: UserItemDto) => {
+    setDeletingUser(user)
+  }
+
+  const handleConfirmDelete = async (userToDelete: UserItemDto) => {
+    setActionSuccessMessage(null)
+    const result = await userApi.deleteUser(userToDelete.id)
+
+    if (result.isSelfDelete) {
+      await dispatch(logoutUser())
+      window.location.href = '/login'
+    } else {
+      setActionSuccessMessage(`User "${userToDelete.fullName || userToDelete.email}" was successfully deleted.`)
+      handleRefreshAll()
+    }
   }
 
   const isCurrentLoading = activeTab === 'users' ? isLoading : invitationsLoading
@@ -172,6 +194,7 @@ export function UserManagementTab({
               <UserTable
                 users={users}
                 onEditUser={handleEditUser}
+                onDeleteUser={handleDeleteUser}
                 isCallerAdmin={isAdmin}
                 isCallerManager={isManager}
                 currentUserId={currentUserId}
@@ -219,7 +242,7 @@ export function UserManagementTab({
         onClose={() => setIsCreateModalOpen(false)}
         onUserCreated={() => {
           handleRefreshAll()
-          setActiveTab('pending') // Switch to pending tab so user sees the new invitation
+          setActiveTab('pending')
         }}
         isAdmin={isAdmin}
       />
@@ -233,6 +256,17 @@ export function UserManagementTab({
         isCallerAdmin={isAdmin}
         isCallerManager={isManager}
         currentUserId={currentUserId}
+      />
+
+      {/* Delete User Confirmation Modal */}
+      <DeleteUserModal
+        isOpen={Boolean(deletingUser)}
+        user={deletingUser}
+        onClose={() => setDeletingUser(null)}
+        onConfirm={handleConfirmDelete}
+        isSelfDelete={
+          Boolean(currentUserId && deletingUser && deletingUser.id.toLowerCase() === currentUserId.toLowerCase())
+        }
       />
     </>
   )

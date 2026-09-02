@@ -608,6 +608,67 @@ public class UserService : IUserService
         }
     }
 
+    public async Task<Result<bool>> DeleteUserAsync(
+        Guid targetUserId,
+        Guid callerUserId,
+        bool isCallerAdmin,
+        CancellationToken cancellationToken = default)
+    {
+        var targetUser = await _userRepository.GetByIdAsync(targetUserId, cancellationToken);
+        if (targetUser is null)
+        {
+            return Result<bool>.Failure("User not found.");
+        }
+
+        var isSelfDelete = targetUserId == callerUserId;
+        var callerUser = isSelfDelete ? targetUser : await _userRepository.GetByIdAsync(callerUserId, cancellationToken);
+        var effectiveCallerAdmin = isCallerAdmin || callerUser?.HasRole(Roles.Admin) == true;
+
+        // Only Admin or the user themselves are permitted to delete the user
+        if (!effectiveCallerAdmin && !isSelfDelete)
+        {
+            return Result<bool>.Failure("Only administrators or the user themselves have permission to delete this account.");
+        }
+
+        // Cannot delete the only remaining system administrator
+        if (targetUser.HasRole(Roles.Admin))
+        {
+            var hasOtherAdmin = await _userRepository.HasOtherAdminAsync(targetUserId, cancellationToken);
+            if (!hasOtherAdmin)
+            {
+                return Result<bool>.Failure("Cannot delete the only remaining system administrator.");
+            }
+        }
+
+        try
+        {
+            // 1. Remove all team memberships for this user
+            await _teamRepository.RemoveAllMembershipsForUserAsync(targetUserId, cancellationToken);
+
+            // 2. Remove all assigned user roles
+            await _userRepository.RemoveUserRolesAsync(targetUserId, cancellationToken);
+
+            // 3. Invalidate any pending invitations for this user's email
+            await _invitationRepository.InvalidateAllForEmailAsync(targetUser.Email, cancellationToken);
+
+            // 4. Delete the user
+            await _userRepository.DeleteAsync(targetUser, cancellationToken);
+
+            // 5. Commit all deletion changes atomically
+            await _userRepository.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("User {UserId} ({Email}) successfully deleted by caller {CallerUserId}",
+                targetUserId, targetUser.Email, callerUserId);
+
+            return Result<bool>.Success(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete user {UserId}", targetUserId);
+            return Result<bool>.Failure(ex.Message);
+        }
+    }
+
     private AuthResult GenerateTokens(User user)
     {
         var accessToken = _tokenService.GenerateAccessToken(user);

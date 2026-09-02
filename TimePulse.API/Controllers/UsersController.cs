@@ -143,4 +143,32 @@ public class UsersController : ControllerBase
 
         return Ok(result.Data);
     }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
+    {
+        var callerUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+        if (!Guid.TryParse(callerUserIdStr, out var callerUserId))
+        {
+            return Unauthorized(new { error = "Invalid user identity." });
+        }
+
+        var isCallerAdmin = User.IsInRole(Roles.Admin)
+            || User.Claims.Any(c => (c.Type == ClaimTypes.Role || c.Type == "role") && c.Value.Equals(Roles.Admin, StringComparison.OrdinalIgnoreCase));
+
+        var result = await _userService.DeleteUserAsync(id, callerUserId, isCallerAdmin, cancellationToken);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors });
+        }
+
+        // If user deleted their own account, clear authentication cookies
+        if (id == callerUserId)
+        {
+            Response.Cookies.Delete("tp_access");
+            Response.Cookies.Delete("tp_refresh");
+        }
+
+        return Ok(new { success = true, isSelfDelete = id == callerUserId });
+    }
 }

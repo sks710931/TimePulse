@@ -69,4 +69,8 @@ export const userApi = {
   async updateUser(userId: string, payload: UpdateUserPayload): Promise<UserItemDto> {
     return apiClient.put<UserItemDto>(`/api/users/${userId}`, payload)
   },
+
+  async deleteUser(userId: string): Promise<{ success: boolean; isSelfDelete?: boolean }> {
+    return apiClient.delete<{ success: boolean; isSelfDelete?: boolean }>(`/api/users/${userId}`)
+  },
 }
