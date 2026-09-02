@@ -30,3 +30,10 @@ public record UpdateTimeEntryRequest(
     Guid? ProjectId = null,
     bool IsBillable = false,
     string? Tag = null);
+
+public record PagedTimeEntriesResult(
+    IReadOnlyList<TimeEntryDto> Items,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages);

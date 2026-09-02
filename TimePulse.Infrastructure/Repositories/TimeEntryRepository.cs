@@ -35,6 +35,35 @@ public class TimeEntryRepository : ITimeEntryRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<(IReadOnlyList<TimeEntry> Items, int TotalCount)> GetPagedByUserAsync(
+        Guid userId,
+        int page,
+        int pageSize,
+        DateTime? startUtc = null,
+        DateTime? endUtc = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.TimeEntries
+            .Include(te => te.Project)
+            .Where(te => te.UserId == userId);
+
+        if (startUtc.HasValue)
+            query = query.Where(te => te.StartTimeUtc >= startUtc.Value);
+        if (endUtc.HasValue)
+            query = query.Where(te => te.StartTimeUtc <= endUtc.Value);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderByDescending(te => te.StartTimeUtc)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
     public async Task AddAsync(TimeEntry entry, CancellationToken cancellationToken = default)
     {
         await _context.TimeEntries.AddAsync(entry, cancellationToken);

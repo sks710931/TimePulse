@@ -1,56 +1,47 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ManualEntryBar } from './ManualEntryBar'
-import { WeekHeader } from './WeekHeader'
-import { DayGroup } from './DayGroup'
+import { WeekGroup, type DayGroupData } from './WeekGroup'
+import { PaginationControls } from './PaginationControls'
 import { EditTimeEntryModal } from './EditTimeEntryModal'
 import { Alert } from '../common/Alert'
 import { Loader2, Calendar } from 'lucide-react'
 import { timeEntryApi, type TimeEntryDto, type CreateTimeEntryPayload, type UpdateTimeEntryPayload } from '../../api/timeEntryApi'
 import { projectApi, type ProjectDto } from '../../api/projectApi'
 
+interface FormattedWeekGroup {
+  weekKey: string
+  weekLabel: string
+  totalMinutes: number
+  dayGroups: DayGroupData[]
+}
+
 export function TimeTrackerTab() {
-  const [weekOffset, setWeekOffset] = useState(0)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
   const [entries, setEntries] = useState<TimeEntryDto[]>([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
   const [projects, setProjects] = useState<ProjectDto[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editingEntry, setEditingEntry] = useState<TimeEntryDto | null>(null)
 
-  // Calculate Monday to Sunday date range for the current weekOffset
-  const { start: weekStart, end: weekEnd } = useMemo(() => {
-    const now = new Date()
-    const currentDay = now.getDay()
-    // In JS, Sunday is 0. If Sunday, go back 6 days to Monday, otherwise subtract (currentDay - 1)
-    const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay
-
-    const monday = new Date(now)
-    monday.setDate(now.getDate() + distanceToMonday + weekOffset * 7)
-    monday.setHours(0, 0, 0, 0)
-
-    const sunday = new Date(monday)
-    sunday.setDate(monday.getDate() + 6)
-    sunday.setHours(23, 59, 59, 999)
-
-    return { start: monday, end: sunday }
-  }, [weekOffset])
-
   const fetchEntries = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
-      const data = await timeEntryApi.getTimeEntries(
-        weekStart.toISOString(),
-        weekEnd.toISOString()
-      )
-      setEntries(data)
+      const res = await timeEntryApi.getTimeEntries(page, pageSize)
+      setEntries(res.items)
+      setTotalCount(res.totalCount)
+      setTotalPages(res.totalPages)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load time entries.')
     } finally {
       setIsLoading(false)
     }
-  }, [weekStart, weekEnd])
+  }, [page, pageSize])
 
-  // Initial load of projects and entries
+  // Initial load of projects
   useEffect(() => {
     projectApi
       .getProjects()
@@ -62,59 +53,118 @@ export function TimeTrackerTab() {
     fetchEntries()
   }, [fetchEntries])
 
-  // Total duration in minutes for the week
-  const weekTotalMinutes = useMemo(() => {
-    return entries.reduce((sum, e) => sum + (e.durationMinutes || 0), 0)
-  }, [entries])
-
-  // Group entries by day (date formatted YYYY-MM-DD)
-  const groupedEntries = useMemo(() => {
-    const groups: { [key: string]: { label: string; date: Date; entries: TimeEntryDto[] } } = {}
+  // Continuously group entries by Week, then by Day
+  const continuousWeekGroups = useMemo<FormattedWeekGroup[]>(() => {
+    if (entries.length === 0) return []
 
     const todayStr = new Date().toDateString()
     const yesterdayStr = new Date(Date.now() - 86400000).toDateString()
 
-    // Sort entries descending
-    const sorted = [...entries].sort(
-      (a, b) => new Date(b.startTimeUtc).getTime() - new Date(a.startTimeUtc).getTime()
-    )
+    // Helper to get Monday of the given date
+    const getMonday = (d: Date) => {
+      const date = new Date(d)
+      const day = date.getDay()
+      const diff = date.getDate() - day + (day === 0 ? -6 : 1)
+      const mon = new Date(date.setDate(diff))
+      mon.setHours(0, 0, 0, 0)
+      return mon
+    }
 
-    for (const entry of sorted) {
-      const d = new Date(entry.startTimeUtc)
-      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const weeksMap = new Map<
+      string,
+      {
+        weekLabel: string
+        totalMinutes: number
+        daysMap: Map<string, { dateLabel: string; entries: TimeEntryDto[] }>
+      }
+    >()
 
-      if (!groups[dateKey]) {
-        let label = d.toLocaleDateString(undefined, {
+    for (const entry of entries) {
+      const entryDate = new Date(entry.startTimeUtc)
+      const monday = getMonday(entryDate)
+      const sunday = new Date(monday)
+      sunday.setDate(monday.getDate() + 6)
+
+      const weekKey = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
+
+      if (!weeksMap.has(weekKey)) {
+        const startStr = monday.toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+        })
+        const endStr = sunday.toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          year: monday.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
+        })
+        const weekLabel = `${startStr} - ${endStr}`
+
+        weeksMap.set(weekKey, {
+          weekLabel,
+          totalMinutes: 0,
+          daysMap: new Map(),
+        })
+      }
+
+      const weekData = weeksMap.get(weekKey)!
+      weekData.totalMinutes += entry.durationMinutes || 0
+
+      // Day grouping inside this week
+      const dateKey = `${entryDate.getFullYear()}-${String(entryDate.getMonth() + 1).padStart(2, '0')}-${String(entryDate.getDate()).padStart(2, '0')}`
+
+      if (!weekData.daysMap.has(dateKey)) {
+        let dateLabel = entryDate.toLocaleDateString(undefined, {
           weekday: 'short',
           month: 'short',
           day: 'numeric',
         })
-        if (d.toDateString() === todayStr) {
-          label = `Today, ${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
-        } else if (d.toDateString() === yesterdayStr) {
-          label = `Yesterday, ${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+        if (entryDate.toDateString() === todayStr) {
+          dateLabel = `Today, ${entryDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+        } else if (entryDate.toDateString() === yesterdayStr) {
+          dateLabel = `Yesterday, ${entryDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
         }
 
-        groups[dateKey] = {
-          label,
-          date: d,
+        weekData.daysMap.set(dateKey, {
+          dateLabel,
           entries: [],
-        }
+        })
       }
 
-      groups[dateKey].entries.push(entry)
+      weekData.daysMap.get(dateKey)!.entries.push(entry)
     }
 
-    return Object.keys(groups)
-      .sort((a, b) => b.localeCompare(a)) // Latest date first
-      .map((k) => groups[k])
+    // Convert map to ordered array
+    const result: FormattedWeekGroup[] = []
+    weeksMap.forEach((weekData, weekKey) => {
+      const dayGroups: DayGroupData[] = []
+      weekData.daysMap.forEach((dayData) => {
+        dayGroups.push({
+          dateLabel: dayData.dateLabel,
+          entries: dayData.entries,
+        })
+      })
+
+      result.push({
+        weekKey,
+        weekLabel: weekData.weekLabel,
+        totalMinutes: weekData.totalMinutes,
+        dayGroups,
+      })
+    })
+
+    return result
   }, [entries])
 
   const handleAddEntry = async (payload: CreateTimeEntryPayload) => {
     setError(null)
     try {
       await timeEntryApi.createTimeEntry(payload)
-      await fetchEntries()
+      // If adding an entry, go back to page 1 to see the latest entry
+      if (page !== 1) {
+        setPage(1)
+      } else {
+        await fetchEntries()
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to add time entry.')
     }
@@ -138,6 +188,11 @@ export function TimeTrackerTab() {
     }
   }
 
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize)
+    setPage(1)
+  }
+
   return (
     <div className="space-y-6">
       {/* Top Bar: Manual Time Entry Bar */}
@@ -149,46 +204,47 @@ export function TimeTrackerTab() {
       {error && <Alert type="error" message={error} />}
 
       {/* Main Content Area */}
-      <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
-        {/* Week Header with Navigation & Week Total */}
-        <WeekHeader
-          startDate={weekStart}
-          endDate={weekEnd}
-          totalDurationMinutes={weekTotalMinutes}
-          onPreviousWeek={() => setWeekOffset((prev) => prev - 1)}
-          onNextWeek={() => setWeekOffset((prev) => prev + 1)}
-          onCurrentWeek={() => setWeekOffset(0)}
-          isCurrentWeek={weekOffset === 0}
-        />
-
+      <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-6">
         {/* Loading Spinner */}
         {isLoading ? (
           <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-2">
             <Loader2 className="w-6 h-6 animate-spin text-sky-500" />
             <span className="text-xs">Loading time entries...</span>
           </div>
-        ) : groupedEntries.length === 0 ? (
+        ) : continuousWeekGroups.length === 0 ? (
           <div className="py-16 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
             <Calendar className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
             <div className="font-semibold text-slate-700 dark:text-slate-300">
-              No time entries recorded for this week.
+              No time entries found.
             </div>
             <p>Use the bar above to add your first time entry.</p>
           </div>
         ) : (
-          /* Day Groups List */
-          <div className="space-y-5 pt-2">
-            {groupedEntries.map((group) => (
-              <DayGroup
-                key={group.label}
-                dateLabel={group.label}
-                entries={group.entries}
+          /* Continuous List of Weeks -> Days -> Tasks */
+          <div className="space-y-8">
+            {continuousWeekGroups.map((weekGroup) => (
+              <WeekGroup
+                key={weekGroup.weekKey}
+                weekLabel={weekGroup.weekLabel}
+                totalMinutes={weekGroup.totalMinutes}
+                dayGroups={weekGroup.dayGroups}
                 onEdit={(entry) => setEditingEntry(entry)}
                 onDelete={handleDeleteEntry}
               />
             ))}
           </div>
         )}
+
+        {/* Pagination Controls */}
+        <PaginationControls
+          page={page}
+          pageSize={pageSize}
+          totalCount={totalCount}
+          totalPages={totalPages}
+          onPageChange={(p) => setPage(p)}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={[50, 100, 200, 500]}
+        />
       </div>
 
       {/* Edit Entry Modal */}

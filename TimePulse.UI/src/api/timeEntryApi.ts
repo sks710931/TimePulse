@@ -34,13 +34,27 @@ export interface UpdateTimeEntryPayload {
   tag?: string | null
 }
 
+export interface PagedTimeEntriesResult {
+  items: TimeEntryDto[]
+  totalCount: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
 export const timeEntryApi = {
-  async getTimeEntries(startDate?: string, endDate?: string): Promise<TimeEntryDto[]> {
+  async getTimeEntries(
+    page: number = 1,
+    pageSize: number = 50,
+    startDate?: string,
+    endDate?: string
+  ): Promise<PagedTimeEntriesResult> {
     const params = new URLSearchParams()
+    params.append('page', String(page))
+    params.append('pageSize', String(pageSize))
     if (startDate) params.append('startDate', startDate)
     if (endDate) params.append('endDate', endDate)
-    const query = params.toString() ? `?${params.toString()}` : ''
-    return apiClient.get<TimeEntryDto[]>(`/api/time-entries${query}`)
+    return apiClient.get<PagedTimeEntriesResult>(`/api/time-entries?${params.toString()}`)
   },
 
   async createTimeEntry(payload: CreateTimeEntryPayload): Promise<TimeEntryDto> {

@@ -11,6 +11,14 @@ public interface ITimeEntryService
         DateTime endUtc,
         CancellationToken cancellationToken = default);
 
+    Task<PagedTimeEntriesResult> GetPagedTimeEntriesAsync(
+        Guid userId,
+        int page,
+        int pageSize,
+        DateTime? startUtc = null,
+        DateTime? endUtc = null,
+        CancellationToken cancellationToken = default);
+
     Task<Result<TimeEntryDto>> CreateTimeEntryAsync(
         Guid userId,
         CreateTimeEntryRequest request,

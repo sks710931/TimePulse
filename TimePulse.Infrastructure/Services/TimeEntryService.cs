@@ -35,6 +35,26 @@ public class TimeEntryService : ITimeEntryService
         return entries.Select(MapToDto).ToList();
     }
 
+    public async Task<PagedTimeEntriesResult> GetPagedTimeEntriesAsync(
+        Guid userId,
+        int page,
+        int pageSize,
+        DateTime? startUtc = null,
+        DateTime? endUtc = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 50;
+
+        var (items, totalCount) = await _timeEntryRepository.GetPagedByUserAsync(
+            userId, page, pageSize, startUtc, endUtc, cancellationToken);
+
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+        var dtos = items.Select(MapToDto).ToList();
+
+        return new PagedTimeEntriesResult(dtos, totalCount, page, pageSize, totalPages);
+    }
+
     public async Task<Result<TimeEntryDto>> CreateTimeEntryAsync(
         Guid userId,
         CreateTimeEntryRequest request,

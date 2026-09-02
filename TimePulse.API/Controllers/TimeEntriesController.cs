@@ -21,9 +21,11 @@ public class TimeEntriesController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetTimeEntries(
-        [FromQuery] DateTime? startDate,
-        [FromQuery] DateTime? endDate,
-        CancellationToken cancellationToken)
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null,
+        CancellationToken cancellationToken = default)
     {
         var (userId, _) = GetCallerInfo();
         if (userId == Guid.Empty)
@@ -31,13 +33,13 @@ public class TimeEntriesController : ControllerBase
             return Unauthorized(new { error = "Invalid user identity." });
         }
 
-        // Default to current week range if not specified
-        var now = DateTime.UtcNow;
-        var start = startDate?.ToUniversalTime() ?? now.Date.AddDays(-(int)now.DayOfWeek + (int)DayOfWeek.Monday);
-        var end = endDate?.ToUniversalTime() ?? start.AddDays(7).AddTicks(-1);
+        var start = startDate?.ToUniversalTime();
+        var end = endDate?.ToUniversalTime();
 
-        var entries = await _timeEntryService.GetTimeEntriesAsync(userId, start, end, cancellationToken);
-        return Ok(entries);
+        var pagedResult = await _timeEntryService.GetPagedTimeEntriesAsync(
+            userId, page, pageSize, start, end, cancellationToken);
+
+        return Ok(pagedResult);
     }
 
     [HttpPost]
