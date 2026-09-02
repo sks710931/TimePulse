@@ -23,3 +23,27 @@ public record SendTestEmailRequest(
     string To,
     string? Subject = null,
     string? Body = null);
+
+public record SendInvitationEmailRequest(
+    string To,
+    string RecipientName,
+    string InvitationUrl,
+    string? Role = null,
+    int ExpiryHours = 48);
+
+public record SendPasswordResetEmailRequest(
+    string To,
+    string RecipientName,
+    string ResetUrl,
+    int ExpiryHours = 2);
+
+public record SendPasswordResetSuccessEmailRequest(
+    string To,
+    string RecipientName,
+    string LoginUrl);
+
+public record SendCustomTemplatedEmailRequest(
+    string To,
+    string Subject,
+    string TemplateHtml,
+    Dictionary<string, string>? Placeholders = null);
