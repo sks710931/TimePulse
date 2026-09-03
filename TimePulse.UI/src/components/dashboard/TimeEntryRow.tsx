@@ -21,14 +21,14 @@ export function TimeEntryRow({
 }: TimeEntryRowProps) {
   const formatTimeOnly = (isoString: string) => {
     const d = new Date(isoString)
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+    return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`
   }
 
   const formatDateToYyyyMmDd = (isoString: string) => {
     const d = new Date(isoString)
-    const yyyy = d.getFullYear()
-    const mm = String(d.getMonth() + 1).padStart(2, '0')
-    const dd = String(d.getDate()).padStart(2, '0')
+    const yyyy = d.getUTCFullYear()
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0')
+    const dd = String(d.getUTCDate()).padStart(2, '0')
     return `${yyyy}-${mm}-${dd}`
   }
 
@@ -126,8 +126,8 @@ export function TimeEntryRow({
     const [startH, startM] = nextStart.split(':').map(Number)
     const [endH, endM] = nextEnd.split(':').map(Number)
 
-    const newStart = new Date(year, month - 1, day, startH, startM, 0)
-    let newEnd = new Date(year, month - 1, day, endH, endM, 0)
+    const newStart = new Date(Date.UTC(year, month - 1, day, startH, startM, 0))
+    let newEnd = new Date(Date.UTC(year, month - 1, day, endH, endM, 0))
     if (newEnd < newStart) {
       newEnd = newStart
     }

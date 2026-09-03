@@ -58,16 +58,17 @@ export function TimeTrackerTab() {
   const continuousWeekGroups = useMemo<FormattedWeekGroup[]>(() => {
     if (entries.length === 0) return []
 
-    const todayStr = new Date().toDateString()
-    const yesterdayStr = new Date(Date.now() - 86400000).toDateString()
+    const now = new Date()
+    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    const yesterday = new Date(Date.now() - 86400000)
+    const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
 
-    // Helper to get Monday of the given date
-    const getMonday = (d: Date) => {
-      const date = new Date(d)
-      const day = date.getDay()
-      const diff = date.getDate() - day + (day === 0 ? -6 : 1)
-      const mon = new Date(date.setDate(diff))
-      mon.setHours(0, 0, 0, 0)
+    // Helper to get Monday of the given date in UTC
+    const getMondayUtc = (d: Date) => {
+      const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+      const day = date.getUTCDay()
+      const diff = date.getUTCDate() - day + (day === 0 ? -6 : 1)
+      const mon = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), diff))
       return mon
     }
 
@@ -82,21 +83,22 @@ export function TimeTrackerTab() {
 
     for (const entry of entries) {
       const entryDate = new Date(entry.startTimeUtc)
-      const monday = getMonday(entryDate)
-      const sunday = new Date(monday)
-      sunday.setDate(monday.getDate() + 6)
+      const monday = getMondayUtc(entryDate)
+      const sunday = new Date(Date.UTC(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate() + 6))
 
-      const weekKey = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
+      const weekKey = `${monday.getUTCFullYear()}-${String(monday.getUTCMonth() + 1).padStart(2, '0')}-${String(monday.getUTCDate()).padStart(2, '0')}`
 
       if (!weeksMap.has(weekKey)) {
         const startStr = monday.toLocaleDateString(undefined, {
           month: 'short',
           day: 'numeric',
+          timeZone: 'UTC',
         })
         const endStr = sunday.toLocaleDateString(undefined, {
           month: 'short',
           day: 'numeric',
-          year: monday.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
+          year: monday.getUTCFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+          timeZone: 'UTC',
         })
         const weekLabel = `${startStr} - ${endStr}`
 
@@ -110,19 +112,21 @@ export function TimeTrackerTab() {
       const weekData = weeksMap.get(weekKey)!
       weekData.totalMinutes += entry.durationMinutes || 0
 
-      // Day grouping inside this week
-      const dateKey = `${entryDate.getFullYear()}-${String(entryDate.getMonth() + 1).padStart(2, '0')}-${String(entryDate.getDate()).padStart(2, '0')}`
+      // Day grouping inside this week using UTC
+      const dateKey = `${entryDate.getUTCFullYear()}-${String(entryDate.getUTCMonth() + 1).padStart(2, '0')}-${String(entryDate.getUTCDate()).padStart(2, '0')}`
 
       if (!weekData.daysMap.has(dateKey)) {
-        let dateLabel = entryDate.toLocaleDateString(undefined, {
+        const dayDate = new Date(Date.UTC(entryDate.getUTCFullYear(), entryDate.getUTCMonth(), entryDate.getUTCDate()))
+        let dateLabel = dayDate.toLocaleDateString(undefined, {
           weekday: 'short',
           month: 'short',
           day: 'numeric',
+          timeZone: 'UTC',
         })
-        if (entryDate.toDateString() === todayStr) {
-          dateLabel = `Today, ${entryDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
-        } else if (entryDate.toDateString() === yesterdayStr) {
-          dateLabel = `Yesterday, ${entryDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+        if (dateKey === todayKey) {
+          dateLabel = `Today, ${dayDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' })}`
+        } else if (dateKey === yesterdayKey) {
+          dateLabel = `Yesterday, ${dayDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' })}`
         }
 
         weekData.daysMap.set(dateKey, {
