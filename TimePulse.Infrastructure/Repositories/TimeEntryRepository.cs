@@ -89,7 +89,14 @@ public class TimeEntryRepository : ITimeEntryRepository
 
         if (isBillable.HasValue)
         {
-            query = query.Where(te => te.IsBillable == isBillable.Value);
+            if (isBillable.Value)
+            {
+                query = query.Where(te => te.Project != null && te.Project.IsBillable);
+            }
+            else
+            {
+                query = query.Where(te => te.Project == null || !te.Project.IsBillable);
+            }
         }
 
         return await query

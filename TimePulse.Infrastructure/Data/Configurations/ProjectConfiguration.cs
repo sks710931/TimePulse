@@ -32,6 +32,10 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .IsRequired()
             .HasDefaultValue(true);
 
+        builder.Property(p => p.IsBillable)
+            .IsRequired()
+            .HasDefaultValue(true);
+
         builder.Property(p => p.CreatedAtUtc)
             .IsRequired();
 

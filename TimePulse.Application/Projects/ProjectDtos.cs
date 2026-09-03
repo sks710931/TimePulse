@@ -16,6 +16,7 @@ public record ProjectDto(
     string? ClientName,
     string? ColorHex,
     bool IsActive,
+    bool IsBillable,
     DateTime CreatedAtUtc,
     DateTime? UpdatedAtUtc,
     IReadOnlyList<ProjectTeamDto> Teams);
@@ -27,6 +28,7 @@ public record CreateProjectRequest(
     string? ClientName,
     string? ColorHex,
     bool IsActive = true,
+    bool IsBillable = true,
     IReadOnlyList<Guid>? TeamIds = null);
 
 public record UpdateProjectRequest(
@@ -35,7 +37,8 @@ public record UpdateProjectRequest(
     string? Description,
     string? ClientName,
     string? ColorHex,
-    bool IsActive);
+    bool IsActive,
+    bool IsBillable = true);
 
 public record SetProjectTeamsRequest(
     IReadOnlyList<Guid> TeamIds);

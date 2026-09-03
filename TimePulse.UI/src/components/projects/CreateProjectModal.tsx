@@ -31,6 +31,7 @@ export function CreateProjectModal({
   const [clientName, setClientName] = useState('')
   const [description, setDescription] = useState('')
   const [colorHex, setColorHex] = useState(PRESET_COLORS[0])
+  const [isBillable, setIsBillable] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -54,6 +55,7 @@ export function CreateProjectModal({
         description: description.trim() || undefined,
         colorHex: colorHex || undefined,
         isActive: true,
+        isBillable,
       })
       onProjectCreated()
       onClose()
@@ -63,6 +65,7 @@ export function CreateProjectModal({
       setClientName('')
       setDescription('')
       setColorHex(PRESET_COLORS[0])
+      setIsBillable(true)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create project.')
     } finally {
@@ -196,6 +199,26 @@ export function CreateProjectModal({
                 />
               ))}
             </div>
+          </div>
+
+          {/* Billable Setting */}
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+            <label className="flex items-center justify-between cursor-pointer select-none">
+              <div>
+                <span className="text-xs font-semibold text-slate-900 dark:text-white block">
+                  Billable Project
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                  All time entries for this project will be calculated as billable in reports.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={isBillable}
+                onChange={(e) => setIsBillable(e.target.checked)}
+                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-700 cursor-pointer"
+              />
+            </label>
           </div>
 
           {/* Modal Actions */}

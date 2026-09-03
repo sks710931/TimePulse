@@ -49,7 +49,18 @@ export function ProjectCard({
             )}
           </div>
 
-          <ProjectStatusBadge isActive={project.isActive} />
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                project.isBillable
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {project.isBillable ? 'Billable' : 'Non-billable'}
+            </span>
+            <ProjectStatusBadge isActive={project.isActive} />
+          </div>
         </div>
 
         {/* Description */}

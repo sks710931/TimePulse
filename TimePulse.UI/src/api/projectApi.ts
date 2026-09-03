@@ -17,6 +17,7 @@ export interface ProjectDto {
   clientName?: string | null
   colorHex?: string | null
   isActive: boolean
+  isBillable: boolean
   createdAtUtc: string
   updatedAtUtc?: string | null
   teams?: ProjectTeamDto[]
@@ -29,6 +30,7 @@ export interface CreateProjectPayload {
   clientName?: string
   colorHex?: string
   isActive?: boolean
+  isBillable?: boolean
   teamIds?: string[]
 }
 
@@ -39,6 +41,7 @@ export interface UpdateProjectPayload {
   clientName?: string
   colorHex?: string
   isActive: boolean
+  isBillable: boolean
 }
 
 export const projectApi = {

@@ -67,7 +67,7 @@ public class ReportService : IReportService
             var endTime = entry.EndTimeUtc.ToString("yyyy-MM-dd HH:mm");
             var durationHours = (entry.DurationMinutes / 60.0).ToString("F2");
             var durationMinutes = entry.DurationMinutes.ToString();
-            var billable = entry.IsBillable ? "Yes" : "No";
+            var billable = IsBillableEntry(entry) ? "Yes" : "No";
 
             sb.AppendLine($"{dateStr},{employeeName},{employeeEmail},{projectName},{description},{tag},{startTime},{endTime},{durationHours},{durationMinutes},{billable}");
         }
@@ -224,7 +224,7 @@ public class ReportService : IReportService
             wsEntries.Cell(row, 8).Value = entry.EndTimeUtc.ToString("yyyy-MM-dd HH:mm");
             wsEntries.Cell(row, 9).Value = Math.Round(entry.DurationMinutes / 60.0, 2);
             wsEntries.Cell(row, 10).Value = entry.DurationMinutes;
-            wsEntries.Cell(row, 11).Value = entry.IsBillable ? "Yes" : "No";
+            wsEntries.Cell(row, 11).Value = IsBillableEntry(entry) ? "Yes" : "No";
 
             if (row % 2 == 0)
             {
@@ -522,10 +522,12 @@ public class ReportService : IReportService
         return (start, end);
     }
 
+    private static bool IsBillableEntry(TimeEntry e) => e.Project != null && e.Project.IsBillable;
+
     private static ReportSummaryDto BuildSummaryDto(IReadOnlyList<TimeEntry> entries, DateTime startUtc, DateTime endUtc)
     {
         var totalMinutes = entries.Sum(e => e.DurationMinutes);
-        var billableMinutes = entries.Where(e => e.IsBillable).Sum(e => e.DurationMinutes);
+        var billableMinutes = entries.Where(IsBillableEntry).Sum(e => e.DurationMinutes);
         var nonBillableMinutes = totalMinutes - billableMinutes;
         var billablePercentage = totalMinutes > 0 ? Math.Round((double)billableMinutes / totalMinutes * 100, 1) : 0;
         var totalHoursDecimal = Math.Round(totalMinutes / 60.0, 2);
@@ -536,7 +538,7 @@ public class ReportService : IReportService
             .Select(g =>
             {
                 var dur = g.Sum(e => e.DurationMinutes);
-                var bill = g.Where(e => e.IsBillable).Sum(e => e.DurationMinutes);
+                var bill = g.Where(IsBillableEntry).Sum(e => e.DurationMinutes);
                 var pct = totalMinutes > 0 ? Math.Round((double)dur / totalMinutes * 100, 1) : 0;
                 var proj = g.First().Project;
                 return new ProjectReportBreakdownDto(
@@ -558,7 +560,7 @@ public class ReportService : IReportService
             .Select(g =>
             {
                 var dur = g.Sum(e => e.DurationMinutes);
-                var bill = g.Where(e => e.IsBillable).Sum(e => e.DurationMinutes);
+                var bill = g.Where(IsBillableEntry).Sum(e => e.DurationMinutes);
                 var user = g.First().User;
                 return new EmployeeReportBreakdownDto(
                     g.Key,
@@ -607,7 +609,7 @@ public class ReportService : IReportService
             e.Project?.ColorHex ?? "#94A3B8",
             e.Description,
             e.Tag,
-            e.IsBillable
+            IsBillableEntry(e)
         )).ToList();
 
         return new ReportSummaryDto(

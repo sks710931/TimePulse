@@ -35,6 +35,7 @@ export function ProjectTable({
             <th className="px-4 py-3">Client</th>
             <th className="px-4 py-3">Assigned Teams</th>
             <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3">Billing</th>
             <th className="px-4 py-3">Created Date</th>
             {canManage && <th className="px-4 py-3 text-right">Actions</th>}
           </tr>
@@ -125,6 +126,19 @@ export function ProjectTable({
                 {/* Status Badge */}
                 <td className="px-4 py-3.5">
                   <ProjectStatusBadge isActive={p.isActive} />
+                </td>
+
+                {/* Billing Badge */}
+                <td className="px-4 py-3.5">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                      p.isBillable
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                    }`}
+                  >
+                    {p.isBillable ? 'Billable' : 'Non-billable'}
+                  </span>
                 </td>
 
                 {/* Created Date */}

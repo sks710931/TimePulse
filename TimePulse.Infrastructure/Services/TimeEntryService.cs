@@ -75,6 +75,8 @@ public class TimeEntryService : ITimeEntryService
             }
         }
 
+        var isBillable = project?.IsBillable ?? false;
+
         try
         {
             var entry = TimeEntry.Create(
@@ -83,7 +85,7 @@ public class TimeEntryService : ITimeEntryService
                 request.EndTimeUtc,
                 request.Description,
                 request.ProjectId,
-                request.IsBillable,
+                isBillable,
                 request.Tag);
 
             await _timeEntryRepository.AddAsync(entry, cancellationToken);
@@ -123,14 +125,17 @@ public class TimeEntryService : ITimeEntryService
             return Result<TimeEntryDto>.Failure("End time cannot be earlier than start time.");
         }
 
+        Project? project = null;
         if (request.ProjectId.HasValue)
         {
-            var project = await _projectRepository.GetByIdAsync(request.ProjectId.Value, cancellationToken);
+            project = await _projectRepository.GetByIdAsync(request.ProjectId.Value, cancellationToken);
             if (project is null)
             {
                 return Result<TimeEntryDto>.Failure("Selected project not found.");
             }
         }
+
+        var isBillable = project?.IsBillable ?? false;
 
         try
         {
@@ -139,7 +144,7 @@ public class TimeEntryService : ITimeEntryService
                 request.EndTimeUtc,
                 request.Description,
                 request.ProjectId,
-                request.IsBillable,
+                isBillable,
                 request.Tag);
 
             await _timeEntryRepository.SaveChangesAsync(cancellationToken);

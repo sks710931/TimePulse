@@ -10,6 +10,7 @@ public class Project : AggregateRoot<Guid>
     public string? ClientName { get; private set; }
     public string? ColorHex { get; private set; }
     public bool IsActive { get; private set; } = true;
+    public bool IsBillable { get; private set; } = true;
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime? UpdatedAtUtc { get; private set; }
 
@@ -24,7 +25,8 @@ public class Project : AggregateRoot<Guid>
         string? description = null,
         string? clientName = null,
         string? colorHex = null,
-        bool isActive = true)
+        bool isActive = true,
+        bool isBillable = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
@@ -37,6 +39,7 @@ public class Project : AggregateRoot<Guid>
             ClientName = string.IsNullOrWhiteSpace(clientName) ? null : clientName.Trim(),
             ColorHex = string.IsNullOrWhiteSpace(colorHex) ? null : colorHex.Trim(),
             IsActive = isActive,
+            IsBillable = isBillable,
             CreatedAtUtc = DateTime.UtcNow,
             UpdatedAtUtc = null
         };
@@ -48,7 +51,8 @@ public class Project : AggregateRoot<Guid>
         string? description,
         string? clientName,
         string? colorHex,
-        bool isActive)
+        bool isActive,
+        bool isBillable)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
@@ -58,6 +62,13 @@ public class Project : AggregateRoot<Guid>
         ClientName = string.IsNullOrWhiteSpace(clientName) ? null : clientName.Trim();
         ColorHex = string.IsNullOrWhiteSpace(colorHex) ? null : colorHex.Trim();
         IsActive = isActive;
+        IsBillable = isBillable;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    public void ToggleBillable()
+    {
+        IsBillable = !IsBillable;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 

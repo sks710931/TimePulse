@@ -80,7 +80,8 @@ public class ProjectService : IProjectService
             request.Description,
             request.ClientName,
             request.ColorHex,
-            request.IsActive);
+            request.IsActive,
+            request.IsBillable);
 
         try
         {
@@ -128,7 +129,8 @@ public class ProjectService : IProjectService
                 request.Description,
                 request.ClientName,
                 request.ColorHex,
-                request.IsActive);
+                request.IsActive,
+                request.IsBillable);
 
             await _projectRepository.SaveChangesAsync(cancellationToken);
 
@@ -192,6 +194,7 @@ public class ProjectService : IProjectService
             p.ClientName,
             p.ColorHex,
             p.IsActive,
+            p.IsBillable,
             p.CreatedAtUtc,
             p.UpdatedAtUtc,
             p.Teams.Select(tp => new ProjectTeamDto(
