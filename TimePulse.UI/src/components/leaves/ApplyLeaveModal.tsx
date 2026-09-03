@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Calendar, Clock, AlertCircle, Sun, Sunrise, Sunset, Loader2 } from 'lucide-react'
+import { X, Calendar, AlertCircle, Sun, Sunrise, Sunset, Loader2 } from 'lucide-react'
 import type { LeaveType, CreateLeaveRequest } from '../../api/leaveApi'
 
 interface ApplyLeaveModalProps {
@@ -142,16 +142,6 @@ export function ApplyLeaveModal({ isOpen, onClose, onSubmit }: ApplyLeaveModalPr
                 <span className="text-[10px] text-slate-400 font-normal">From 1:00 PM</span>
               </button>
             </div>
-          </div>
-
-          {/* Tolerance explanation note */}
-          <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-800 flex items-start gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-            <Clock className="w-3.5 h-3.5 text-indigo-500 mt-0.5 shrink-0" />
-            <span>
-              {leaveType === 'FullDay' && 'Full day leaves forbid logging any time entries on this date.'}
-              {leaveType === 'FirstHalf' && '1-hour flex buffer: Work is permitted from 12:00 PM onwards. Morning entries before 12:00 PM are forbidden.'}
-              {leaveType === 'SecondHalf' && '1-hour flex buffer: Work is permitted until 2:00 PM. Afternoon entries after 2:00 PM are forbidden.'}
-            </span>
           </div>
 
           {/* Reason (Optional) */}
