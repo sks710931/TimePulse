@@ -68,6 +68,15 @@ function parseErrorMessage(err: unknown, fallbackStatus: number): string {
   if (typeof errObj.errors === 'string' && errObj.errors) {
     return errObj.errors
   }
+  if (errObj.errors && typeof errObj.errors === 'object') {
+    const errorVals = Object.values(errObj.errors).flat()
+    if (errorVals.length > 0) {
+      return errorVals.join(', ')
+    }
+  }
+  if (typeof errObj.title === 'string' && errObj.title) {
+    return errObj.title
+  }
   if (typeof errObj.message === 'string' && errObj.message) {
     return errObj.message
   }
