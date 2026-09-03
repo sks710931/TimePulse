@@ -28,7 +28,7 @@ export function TopHeader({
   }
 
   return (
-    <header className="h-16 px-4 sm:px-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between sticky top-0 z-30 transition-colors duration-200">
+    <header className="h-16 shrink-0 px-4 sm:px-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between sticky top-0 z-30 transition-colors duration-200">
       <div className="flex items-center gap-3">
         {/* Hamburger Menu Button */}
         <button

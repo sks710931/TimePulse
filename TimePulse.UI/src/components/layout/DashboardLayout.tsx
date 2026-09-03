@@ -50,7 +50,7 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors duration-200">
+    <div className="h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex overflow-hidden transition-colors duration-200">
       {/* Collapsible Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -61,7 +61,7 @@ export function DashboardLayout() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Top Navbar Header */}
         <TopHeader
           title={tabTitles[activeTab]}
@@ -73,8 +73,10 @@ export function DashboardLayout() {
         />
 
         {/* Dynamic Nested Route Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <div className="max-w-7xl w-full mx-auto space-y-6">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
