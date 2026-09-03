@@ -64,6 +64,40 @@ public class TimeEntryRepository : ITimeEntryRepository
         return (items, totalCount);
     }
 
+    public async Task<IReadOnlyList<TimeEntry>> GetForReportAsync(
+        Guid? userId,
+        Guid? projectId,
+        bool? isBillable,
+        DateTime startUtc,
+        DateTime endUtc,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.TimeEntries
+            .Include(te => te.Project)
+            .Include(te => te.User)
+            .Where(te => te.StartTimeUtc >= startUtc && te.StartTimeUtc <= endUtc);
+
+        if (userId.HasValue && userId.Value != Guid.Empty)
+        {
+            query = query.Where(te => te.UserId == userId.Value);
+        }
+
+        if (projectId.HasValue && projectId.Value != Guid.Empty)
+        {
+            query = query.Where(te => te.ProjectId == projectId.Value);
+        }
+
+        if (isBillable.HasValue)
+        {
+            query = query.Where(te => te.IsBillable == isBillable.Value);
+        }
+
+        return await query
+            .OrderByDescending(te => te.StartTimeUtc)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(TimeEntry entry, CancellationToken cancellationToken = default)
     {
         await _context.TimeEntries.AddAsync(entry, cancellationToken);

@@ -11,6 +11,7 @@ import { AcceptInvitationPage } from './pages/AcceptInvitationPage'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { OverviewPage } from './pages/OverviewPage'
 import { TimeTrackerPage } from './pages/TimeTrackerPage'
+import { ReportsPage } from './pages/ReportsPage'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { TeamsPage } from './pages/TeamsPage'
 import { UserManagementPage } from './pages/UserManagementPage'
@@ -85,6 +86,7 @@ function App() {
             <Route path="/dashboard" element={<Navigate to="/overview" replace />} />
             <Route path="/overview" element={<OverviewPage />} />
             <Route path="/timetracker" element={<TimeTrackerPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/teams" element={<TeamsPage />} />
             <Route path="/users" element={<UserManagementPage />} />

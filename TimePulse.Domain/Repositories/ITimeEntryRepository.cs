@@ -20,6 +20,14 @@ public interface ITimeEntryRepository
         DateTime? endUtc = null,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<TimeEntry>> GetForReportAsync(
+        Guid? userId,
+        Guid? projectId,
+        bool? isBillable,
+        DateTime startUtc,
+        DateTime endUtc,
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(TimeEntry entry, CancellationToken cancellationToken = default);
     Task DeleteAsync(TimeEntry entry, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
