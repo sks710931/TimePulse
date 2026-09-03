@@ -80,6 +80,25 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Logged out." });
     }
 
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken cancellationToken)
+    {
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+        if (!Guid.TryParse(userIdStr, out var userId))
+        {
+            return Unauthorized(new { error = "Invalid user identity." });
+        }
+
+        var result = await _authService.ChangePasswordAsync(userId, request, cancellationToken);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors });
+        }
+
+        return Ok(new { message = "Password updated successfully." });
+    }
+
     [AllowAnonymous]
     [HttpGet("invite/validate")]
     public async Task<IActionResult> ValidateInvitation([FromQuery] string token, CancellationToken cancellationToken)

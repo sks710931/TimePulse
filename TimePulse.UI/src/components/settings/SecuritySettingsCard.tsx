@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useAppDispatch } from '../../store/hooks'
 import { logoutUser } from '../../store/slices/authSlice'
+import { authApi } from '../../api/authApi'
 import { Alert } from '../common/Alert'
-import { Shield, Key, Lock, LogOut, CheckCircle2 } from 'lucide-react'
+import { Shield, Key, Lock, LogOut, CheckCircle2, Loader2 } from 'lucide-react'
 
 export function SecuritySettingsCard() {
   const dispatch = useAppDispatch()
@@ -11,8 +12,9 @@ export function SecuritySettingsCard() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handlePasswordChange = (e: React.FormEvent) => {
+  const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setMessage(null)
@@ -26,11 +28,23 @@ export function SecuritySettingsCard() {
       return
     }
 
-    setMessage('Password updated successfully.')
-    setCurrentPassword('')
-    setNewPassword('')
-    setConfirmPassword('')
-    setTimeout(() => setMessage(null), 3000)
+    setIsLoading(true)
+    try {
+      await authApi.changePassword({
+        currentPassword,
+        newPassword,
+      })
+      setMessage('Password updated successfully.')
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setTimeout(() => setMessage(null), 4000)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update password'
+      setError(msg)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -103,10 +117,15 @@ export function SecuritySettingsCard() {
         <div className="flex items-center justify-between pt-2">
           <button
             type="submit"
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-1.5 cursor-pointer"
+            disabled={isLoading}
+            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Update Password</span>
+            {isLoading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            )}
+            <span>{isLoading ? 'Updating...' : 'Update Password'}</span>
           </button>
 
           <button

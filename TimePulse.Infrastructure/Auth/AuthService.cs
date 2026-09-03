@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.Extensions.Configuration;
 using TimePulse.Application.Auth;
 using TimePulse.Application.Common.Interfaces;
+using TimePulse.Application.Common.Models;
 using TimePulse.Domain.Entities;
 using TimePulse.Domain.Repositories;
 
@@ -112,6 +113,31 @@ public class AuthService : IAuthService
         }
 
         await _userRepository.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<Result<bool>> ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
+        if (user is null)
+        {
+            return Result<bool>.Failure("User not found.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword) || !BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+        {
+            return Result<bool>.Failure("Current password is incorrect.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
+        {
+            return Result<bool>.Failure("New password must be at least 6 characters long.");
+        }
+
+        var newHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.UpdatePassword(newHash);
+
+        await _userRepository.SaveChangesAsync(cancellationToken);
+        return Result<bool>.Success(true);
     }
 
     private AuthResult GenerateTokens(User user)

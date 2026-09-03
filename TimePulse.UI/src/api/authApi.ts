@@ -1,4 +1,4 @@
-import { apiFetch } from './apiClient'
+import { apiClient, apiFetch } from './apiClient'
 
 export interface UserProfile {
   id: string
@@ -102,5 +102,9 @@ export const authApi = {
     } catch {
       // Ignore network errors on logout
     }
+  },
+
+  async changePassword(payload: { currentPassword: string; newPassword: string }): Promise<{ message: string }> {
+    return apiClient.post<{ message: string }>('/api/auth/change-password', payload)
   },
 }

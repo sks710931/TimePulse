@@ -4,6 +4,8 @@ public record LoginRequest(string Email, string Password);
 
 public record RegisterRequest(string Email, string Password, string FullName);
 
+public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+
 public record AuthResult
 {
     public bool Succeeded { get; init; }
