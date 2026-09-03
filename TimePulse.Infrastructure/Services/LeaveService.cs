@@ -97,8 +97,8 @@ public class LeaveService : ILeaveService
         var tempLeave = Leave.Create(userId, request.Date, request.LeaveType, request.Reason);
 
         // Fetch existing time entries around this date to detect Option 2 conflicts
-        var startWindow = request.Date.ToDateTime(TimeOnly.MinValue).AddDays(-1);
-        var endWindow = request.Date.ToDateTime(TimeOnly.MaxValue).AddDays(1);
+        var startWindow = DateTime.SpecifyKind(request.Date.ToDateTime(TimeOnly.MinValue).AddDays(-1), DateTimeKind.Utc);
+        var endWindow = DateTime.SpecifyKind(request.Date.ToDateTime(TimeOnly.MaxValue).AddDays(1), DateTimeKind.Utc);
         var existingEntries = await _timeEntryRepository.GetByUserAndDateRangeAsync(userId, startWindow, endWindow, cancellationToken);
 
         foreach (var entry in existingEntries)
@@ -173,8 +173,8 @@ public class LeaveService : ILeaveService
         var tempLeave = Leave.Create(leave.UserId, request.Date, request.LeaveType, request.Reason);
 
         // Check conflicts against existing time entries
-        var startWindow = request.Date.ToDateTime(TimeOnly.MinValue).AddDays(-1);
-        var endWindow = request.Date.ToDateTime(TimeOnly.MaxValue).AddDays(1);
+        var startWindow = DateTime.SpecifyKind(request.Date.ToDateTime(TimeOnly.MinValue).AddDays(-1), DateTimeKind.Utc);
+        var endWindow = DateTime.SpecifyKind(request.Date.ToDateTime(TimeOnly.MaxValue).AddDays(1), DateTimeKind.Utc);
         var existingEntries = await _timeEntryRepository.GetByUserAndDateRangeAsync(leave.UserId, startWindow, endWindow, cancellationToken);
 
         foreach (var entry in existingEntries)
