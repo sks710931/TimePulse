@@ -27,6 +27,7 @@ export interface EmployeeReportBreakdown {
   hoursFormatted: string
   billableMinutes: number
   entryCount: number
+  leavesTaken?: number
 }
 
 export interface DailyTrend {
@@ -68,6 +69,7 @@ export interface ReportSummary {
   nonBillableDurationMinutes: number
   nonBillableHoursFormatted: string
   totalEntriesCount: number
+  totalLeavesTaken?: number
   projects: ProjectReportBreakdown[]
   employees: EmployeeReportBreakdown[]
   dailyTrends: DailyTrend[]

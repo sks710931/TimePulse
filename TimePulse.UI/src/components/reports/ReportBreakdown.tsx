@@ -137,6 +137,11 @@ export function ReportBreakdown({ summary, isManagerOrAdmin }: ReportBreakdownPr
                     </div>
                     <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
                       <span className="text-[11px] text-slate-400">{emp.entryCount} entries</span>
+                      {(emp.leavesTaken ?? 0) > 0 && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                          Leaves: {emp.leavesTaken}
+                        </span>
+                      )}
                       <span className="font-semibold text-slate-900 dark:text-white">{emp.hoursFormatted}</span>
                       <span>({pct.toFixed(1)}%)</span>
                     </div>

@@ -24,7 +24,8 @@ public record ReportSummaryDto(
     IReadOnlyList<ProjectReportBreakdownDto> Projects,
     IReadOnlyList<EmployeeReportBreakdownDto> Employees,
     IReadOnlyList<DailyTrendDto> DailyTrends,
-    IReadOnlyList<ReportTimeEntryDto> Entries
+    IReadOnlyList<ReportTimeEntryDto> Entries,
+    double TotalLeavesTaken = 0.0
 );
 
 public record ProjectReportBreakdownDto(
@@ -44,7 +45,8 @@ public record EmployeeReportBreakdownDto(
     int DurationMinutes,
     string HoursFormatted,
     int BillableMinutes,
-    int EntryCount
+    int EntryCount,
+    double LeavesTaken = 0.0
 );
 
 public record DailyTrendDto(

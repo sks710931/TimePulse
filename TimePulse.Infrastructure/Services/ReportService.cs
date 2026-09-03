@@ -14,6 +14,7 @@ namespace TimePulse.Infrastructure.Services;
 public class ReportService : IReportService
 {
     private readonly ITimeEntryRepository _timeEntryRepository;
+    private readonly ILeaveRepository _leaveRepository;
     private readonly ILogger<ReportService> _logger;
 
     static ReportService()
@@ -24,9 +25,11 @@ public class ReportService : IReportService
 
     public ReportService(
         ITimeEntryRepository timeEntryRepository,
+        ILeaveRepository leaveRepository,
         ILogger<ReportService> logger)
     {
         _timeEntryRepository = timeEntryRepository;
+        _leaveRepository = leaveRepository;
         _logger = logger;
     }
 
@@ -39,7 +42,12 @@ public class ReportService : IReportService
         var (startUtc, endUtc) = ResolveDateRange(filter);
         var entries = await FetchEntriesAsync(callerUserId, isManagerOrAdmin, filter, startUtc, endUtc, cancellationToken);
 
-        return BuildSummaryDto(entries, startUtc, endUtc);
+        var startDate = DateOnly.FromDateTime(startUtc);
+        var endDate = DateOnly.FromDateTime(endUtc);
+        var targetUserId = isManagerOrAdmin ? filter.UserId : callerUserId;
+        var leaves = await _leaveRepository.GetForDateRangeAsync(targetUserId, startDate, endDate, cancellationToken);
+
+        return BuildSummaryDto(entries, leaves, startUtc, endUtc);
     }
 
     public async Task<(byte[] Content, string FileName, string ContentType)> ExportCsvAsync(
@@ -90,7 +98,12 @@ public class ReportService : IReportService
     {
         var (startUtc, endUtc) = ResolveDateRange(filter);
         var entries = await FetchEntriesAsync(callerUserId, isManagerOrAdmin, filter, startUtc, endUtc, cancellationToken);
-        var summary = BuildSummaryDto(entries, startUtc, endUtc);
+
+        var startDate = DateOnly.FromDateTime(startUtc);
+        var endDate = DateOnly.FromDateTime(endUtc);
+        var targetUserId = isManagerOrAdmin ? filter.UserId : callerUserId;
+        var leaves = await _leaveRepository.GetForDateRangeAsync(targetUserId, startDate, endDate, cancellationToken);
+        var summary = BuildSummaryDto(entries, leaves, startUtc, endUtc);
 
         using var workbook = new XLWorkbook();
 
@@ -100,7 +113,7 @@ public class ReportService : IReportService
         var wsSummary = workbook.Worksheets.Add("Summary");
 
         // Header Title Banner
-        wsSummary.Range("A1:I1").Merge();
+        wsSummary.Range("A1:J1").Merge();
         wsSummary.Cell("A1").Value = "TimePulse - Consolidated Employee Summary Report";
         wsSummary.Cell("A1").Style.Font.Bold = true;
         wsSummary.Cell("A1").Style.Font.FontSize = 14;
@@ -111,7 +124,7 @@ public class ReportService : IReportService
         wsSummary.Row(1).Height = 30;
 
         // Metadata Subtitle
-        wsSummary.Range("A2:I2").Merge();
+        wsSummary.Range("A2:J2").Merge();
         wsSummary.Cell("A2").Value = $"Date Range: {startUtc:yyyy-MM-dd} to {endUtc:yyyy-MM-dd} UTC  |  Generated on: {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC";
         wsSummary.Cell("A2").Style.Font.Italic = true;
         wsSummary.Cell("A2").Style.Font.FontSize = 10;
@@ -133,7 +146,8 @@ public class ReportService : IReportService
             "Total Non Billable",
             "Total Hrs",
             "% of Billed Hrs",
-            "Tasks"
+            "Tasks",
+            "Leave Taken"
         };
 
         for (int i = 0; i < summaryHeaders.Length; i++)
@@ -152,6 +166,8 @@ public class ReportService : IReportService
 
         var currentRow = 5;
 
+        var leavesByUser = leaves.GroupBy(l => l.UserId).ToDictionary(g => g.Key, g => g.ToList());
+
         // Group entries by Employee
         var employeeGroups = entries
             .GroupBy(e => e.UserId)
@@ -160,7 +176,7 @@ public class ReportService : IReportService
 
         if (employeeGroups.Count == 0)
         {
-            wsSummary.Range(5, 1, 5, 9).Merge();
+            wsSummary.Range(5, 1, 5, 10).Merge();
             wsSummary.Cell(5, 1).Value = "No time entries found for the selected date range.";
             wsSummary.Cell(5, 1).Style.Font.Italic = true;
             wsSummary.Cell(5, 1).Style.Font.FontColor = XLColor.FromHtml("#64748B");
@@ -182,6 +198,9 @@ public class ReportService : IReportService
                 var empBillableHoursDec = Math.Round(empBillableMinutes / 60.0, 2);
                 var empNonBillableHoursDec = Math.Round(empNonBillableMinutes / 60.0, 2);
                 var empBilledPct = empTotalMinutes > 0 ? (double)empBillableMinutes / empTotalMinutes : 0.0;
+
+                var empLeaves = leavesByUser.TryGetValue(empGroup.Key, out var userLeaves) ? userLeaves : new List<Leave>();
+                var empLeavesTaken = CalculateLeaveDays(empLeaves);
 
                 // Group by project for this employee
                 var projectGroups = empEntries
@@ -237,7 +256,7 @@ public class ReportService : IReportService
                     wsSummary.Cell(r, 9).Style.Alignment.Vertical = XLAlignmentVerticalValues.Top;
 
                     // Row background & borders
-                    var rowRange = wsSummary.Range(r, 1, r, 9);
+                    var rowRange = wsSummary.Range(r, 1, r, 10);
                     rowRange.Style.Fill.BackgroundColor = zebraBg;
                     rowRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
                     rowRange.Style.Border.InsideBorderColor = XLColor.FromHtml("#E2E8F0");
@@ -253,6 +272,7 @@ public class ReportService : IReportService
                     wsSummary.Range(empStartRow, 6, empEndRow, 6).Merge();
                     wsSummary.Range(empStartRow, 7, empEndRow, 7).Merge();
                     wsSummary.Range(empStartRow, 8, empEndRow, 8).Merge();
+                    wsSummary.Range(empStartRow, 10, empEndRow, 10).Merge();
                 }
 
                 // Column A: Name of Employee
@@ -284,6 +304,12 @@ public class ReportService : IReportService
                 wsSummary.Cell(empStartRow, 8).Style.NumberFormat.Format = "0.0%";
                 wsSummary.Cell(empStartRow, 8).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
                 wsSummary.Cell(empStartRow, 8).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                // Column J: Leave Taken
+                wsSummary.Cell(empStartRow, 10).Value = empLeavesTaken;
+                wsSummary.Cell(empStartRow, 10).Style.NumberFormat.Format = "0.#";
+                wsSummary.Cell(empStartRow, 10).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                wsSummary.Cell(empStartRow, 10).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
 
                 currentRow = empEndRow + 1;
                 empIndex++;
@@ -334,7 +360,15 @@ public class ReportService : IReportService
             // Column I: Empty for grand total
             wsSummary.Cell(currentRow, 9).Value = "";
 
-            var totalRowRange = wsSummary.Range(currentRow, 1, currentRow, 9);
+            // Column J: Grand Total Leave Taken
+            var grandLeavesTaken = CalculateLeaveDays(leaves);
+            wsSummary.Cell(currentRow, 10).Value = grandLeavesTaken;
+            wsSummary.Cell(currentRow, 10).Style.NumberFormat.Format = "0.#";
+            wsSummary.Cell(currentRow, 10).Style.Font.Bold = true;
+            wsSummary.Cell(currentRow, 10).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            wsSummary.Cell(currentRow, 10).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+            var totalRowRange = wsSummary.Range(currentRow, 1, currentRow, 10);
             totalRowRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#E0E7FF"); // Light Indigo
             totalRowRange.Style.Border.TopBorder = XLBorderStyleValues.Medium;
             totalRowRange.Style.Border.TopBorderColor = XLColor.FromHtml("#4F46E5");
@@ -353,6 +387,7 @@ public class ReportService : IReportService
         wsSummary.Column(7).Width = 16;
         wsSummary.Column(8).Width = 20;
         wsSummary.Column(9).Width = 45;
+        wsSummary.Column(10).Width = 15;
 
         // -------------------------------------------------------------
         // Sheet 2: Detailed Time Entries
@@ -429,7 +464,12 @@ public class ReportService : IReportService
     {
         var (startUtc, endUtc) = ResolveDateRange(filter);
         var entries = await FetchEntriesAsync(callerUserId, isManagerOrAdmin, filter, startUtc, endUtc, cancellationToken);
-        var summary = BuildSummaryDto(entries, startUtc, endUtc);
+
+        var startDate = DateOnly.FromDateTime(startUtc);
+        var endDate = DateOnly.FromDateTime(endUtc);
+        var targetUserId = isManagerOrAdmin ? filter.UserId : callerUserId;
+        var leaves = await _leaveRepository.GetForDateRangeAsync(targetUserId, startDate, endDate, cancellationToken);
+        var summary = BuildSummaryDto(entries, leaves, startUtc, endUtc);
 
         var document = Document.Create(container =>
         {
@@ -678,8 +718,27 @@ public class ReportService : IReportService
 
     private static bool IsBillableEntry(TimeEntry e) => e.Project != null && e.Project.IsBillable;
 
-    private static ReportSummaryDto BuildSummaryDto(IReadOnlyList<TimeEntry> entries, DateTime startUtc, DateTime endUtc)
+    private static double CalculateLeaveDays(IEnumerable<Leave> leaves)
     {
+        return leaves.Sum(l => l.LeaveType switch
+        {
+            Domain.Enums.LeaveType.FullDay => 1.0,
+            Domain.Enums.LeaveType.FirstHalf => 0.5,
+            Domain.Enums.LeaveType.SecondHalf => 0.5,
+            _ => 1.0
+        });
+    }
+
+    private static ReportSummaryDto BuildSummaryDto(
+        IReadOnlyList<TimeEntry> entries,
+        IReadOnlyList<Leave>? leaves,
+        DateTime startUtc,
+        DateTime endUtc)
+    {
+        var leavesList = leaves ?? Array.Empty<Leave>();
+        var leavesByUser = leavesList.GroupBy(l => l.UserId).ToDictionary(g => g.Key, g => g.ToList());
+        var totalLeavesTaken = CalculateLeaveDays(leavesList);
+
         var totalMinutes = entries.Sum(e => e.DurationMinutes);
         var billableMinutes = entries.Where(IsBillableEntry).Sum(e => e.DurationMinutes);
         var nonBillableMinutes = totalMinutes - billableMinutes;
@@ -716,6 +775,8 @@ public class ReportService : IReportService
                 var dur = g.Sum(e => e.DurationMinutes);
                 var bill = g.Where(IsBillableEntry).Sum(e => e.DurationMinutes);
                 var user = g.First().User;
+                var userLeaves = leavesByUser.TryGetValue(g.Key, out var ul) ? ul : new List<Leave>();
+                var leavesTaken = CalculateLeaveDays(userLeaves);
                 return new EmployeeReportBreakdownDto(
                     g.Key,
                     user?.FullName ?? "Unknown",
@@ -723,7 +784,8 @@ public class ReportService : IReportService
                     dur,
                     FormatDuration(dur),
                     bill,
-                    g.Count()
+                    g.Count(),
+                    leavesTaken
                 );
             })
             .OrderByDescending(e => e.DurationMinutes)
@@ -781,7 +843,8 @@ public class ReportService : IReportService
             projectGroups,
             employeeGroups,
             dailyTrends,
-            dtos
+            dtos,
+            totalLeavesTaken
         );
     }
 
