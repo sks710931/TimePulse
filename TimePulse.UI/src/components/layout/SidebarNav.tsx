@@ -4,12 +4,13 @@ import {
   Users2,
   Users,
   Clock,
+  CalendarOff,
   Settings,
   FileBarChart,
   type LucideIcon,
 } from 'lucide-react'
 
-export type TabId = 'overview' | 'timetracker' | 'reports' | 'projects' | 'teams' | 'users' | 'settings'
+export type TabId = 'overview' | 'timetracker' | 'leaves' | 'reports' | 'projects' | 'teams' | 'users' | 'settings'
 
 interface NavItemConfig {
   id: TabId
@@ -38,6 +39,7 @@ export function SidebarNav({
   const navItems: NavItemConfig[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'timetracker', label: 'Time Tracker', icon: Clock },
+    { id: 'leaves', label: 'Leaves', icon: CalendarOff },
     { id: 'reports', label: 'Reports', icon: FileBarChart },
     { id: 'projects', label: 'Projects', icon: FolderKanban },
     { id: 'teams', label: 'Teams', icon: Users2 },

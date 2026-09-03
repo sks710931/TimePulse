@@ -27,6 +27,7 @@ export function DashboardLayout() {
   const getActiveTab = (): TabId => {
     const path = location.pathname.toLowerCase()
     if (path.startsWith('/timetracker')) return 'timetracker'
+    if (path.startsWith('/leaves')) return 'leaves'
     if (path.startsWith('/reports')) return 'reports'
     if (path.startsWith('/projects')) return 'projects'
     if (path.startsWith('/teams')) return 'teams'
@@ -44,6 +45,7 @@ export function DashboardLayout() {
   const tabTitles: Record<TabId, string> = {
     overview: 'Overview Dashboard',
     timetracker: 'Time Tracker',
+    leaves: 'Leave Tracker',
     reports: 'Time & Productivity Reports',
     projects: 'Projects & Workspaces',
     teams: 'Teams & Departments',

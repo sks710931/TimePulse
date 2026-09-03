@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using TimePulse.Application.Common.Interfaces;
 using TimePulse.Application.Common.Models;
@@ -11,15 +12,21 @@ public class TimeEntryService : ITimeEntryService
 {
     private readonly ITimeEntryRepository _timeEntryRepository;
     private readonly IProjectRepository _projectRepository;
+    private readonly ILeaveRepository _leaveRepository;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<TimeEntryService> _logger;
 
     public TimeEntryService(
         ITimeEntryRepository timeEntryRepository,
         IProjectRepository projectRepository,
+        ILeaveRepository leaveRepository,
+        IHttpContextAccessor httpContextAccessor,
         ILogger<TimeEntryService> logger)
     {
         _timeEntryRepository = timeEntryRepository;
         _projectRepository = projectRepository;
+        _leaveRepository = leaveRepository;
+        _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
 
@@ -76,6 +83,28 @@ public class TimeEntryService : ITimeEntryService
         }
 
         var isBillable = project?.IsBillable ?? false;
+
+        // Check for leave conflicts using Option 2
+        var timezoneOffset = GetTimezoneOffsetMinutes();
+        var localStart = request.StartTimeUtc.AddMinutes(-timezoneOffset);
+        var localEnd = request.EndTimeUtc.AddMinutes(-timezoneOffset);
+        var startDate = DateOnly.FromDateTime(localStart);
+        var endDate = DateOnly.FromDateTime(localEnd);
+
+        var leaves = await _leaveRepository.GetForDateRangeAsync(userId, startDate, endDate, cancellationToken);
+        foreach (var leave in leaves)
+        {
+            var (hasConflict, conflictReason) = LeaveConflictHelper.CheckConflict(
+                request.StartTimeUtc,
+                request.EndTimeUtc,
+                leave,
+                timezoneOffset);
+
+            if (hasConflict)
+            {
+                return Result<TimeEntryDto>.Failure(conflictReason ?? "Time entry conflicts with scheduled leave.");
+            }
+        }
 
         try
         {
@@ -136,6 +165,28 @@ public class TimeEntryService : ITimeEntryService
         }
 
         var isBillable = project?.IsBillable ?? false;
+
+        // Check for leave conflicts using Option 2
+        var timezoneOffset = GetTimezoneOffsetMinutes();
+        var localStart = request.StartTimeUtc.AddMinutes(-timezoneOffset);
+        var localEnd = request.EndTimeUtc.AddMinutes(-timezoneOffset);
+        var startDate = DateOnly.FromDateTime(localStart);
+        var endDate = DateOnly.FromDateTime(localEnd);
+
+        var leaves = await _leaveRepository.GetForDateRangeAsync(entry.UserId, startDate, endDate, cancellationToken);
+        foreach (var leave in leaves)
+        {
+            var (hasConflict, conflictReason) = LeaveConflictHelper.CheckConflict(
+                request.StartTimeUtc,
+                request.EndTimeUtc,
+                leave,
+                timezoneOffset);
+
+            if (hasConflict)
+            {
+                return Result<TimeEntryDto>.Failure(conflictReason ?? "Time entry conflicts with scheduled leave.");
+            }
+        }
 
         try
         {
@@ -204,4 +255,17 @@ public class TimeEntryService : ITimeEntryService
             te.IsBillable,
             te.Tag,
             te.CreatedAtUtc);
+
+    private int GetTimezoneOffsetMinutes()
+    {
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext != null && httpContext.Request.Headers.TryGetValue("X-Timezone-Offset", out var headerVal))
+        {
+            if (int.TryParse(headerVal.FirstOrDefault(), out var offset))
+            {
+                return offset;
+            }
+        }
+        return 0;
+    }
 }
