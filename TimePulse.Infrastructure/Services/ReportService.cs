@@ -100,93 +100,259 @@ public class ReportService : IReportService
         var wsSummary = workbook.Worksheets.Add("Summary");
 
         // Header Title Banner
-        wsSummary.Range("A1:F1").Merge();
-        wsSummary.Cell("A1").Value = "TimePulse - Time & Productivity Report";
+        wsSummary.Range("A1:I1").Merge();
+        wsSummary.Cell("A1").Value = "TimePulse - Consolidated Employee Summary Report";
         wsSummary.Cell("A1").Style.Font.Bold = true;
-        wsSummary.Cell("A1").Style.Font.FontSize = 16;
+        wsSummary.Cell("A1").Style.Font.FontSize = 14;
         wsSummary.Cell("A1").Style.Font.FontColor = XLColor.White;
         wsSummary.Cell("A1").Style.Fill.BackgroundColor = XLColor.FromHtml("#4F46E5"); // Indigo
         wsSummary.Cell("A1").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-        wsSummary.Row(1).Height = 32;
+        wsSummary.Cell("A1").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        wsSummary.Row(1).Height = 30;
 
         // Metadata Subtitle
-        wsSummary.Range("A2:F2").Merge();
+        wsSummary.Range("A2:I2").Merge();
         wsSummary.Cell("A2").Value = $"Date Range: {startUtc:yyyy-MM-dd} to {endUtc:yyyy-MM-dd} UTC  |  Generated on: {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC";
         wsSummary.Cell("A2").Style.Font.Italic = true;
         wsSummary.Cell("A2").Style.Font.FontSize = 10;
         wsSummary.Cell("A2").Style.Font.FontColor = XLColor.FromHtml("#64748B");
         wsSummary.Cell("A2").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        wsSummary.Row(2).Height = 20;
 
-        // KPI Metric Cards Table
-        wsSummary.Cell("A4").Value = "Metric";
-        wsSummary.Cell("B4").Value = "Value";
-        wsSummary.Cell("C4").Value = "Details";
-        wsSummary.Range("A4:C4").Style.Font.Bold = true;
-        wsSummary.Range("A4:C4").Style.Fill.BackgroundColor = XLColor.FromHtml("#F1F5F9");
-        wsSummary.Range("A4:C4").Style.Border.BottomBorder = XLBorderStyleValues.Medium;
+        // Row 3: Spacing
+        wsSummary.Row(3).Height = 10;
 
-        var kpiRow = 5;
-        AddKpiRow(wsSummary, kpiRow++, "Total Time Tracked", summary.TotalHoursFormatted, $"{summary.TotalHoursDecimal:F2} decimal hours");
-        AddKpiRow(wsSummary, kpiRow++, "Billable Time", summary.BillableHoursFormatted, $"{summary.BillablePercentage:F1}% of total time");
-        AddKpiRow(wsSummary, kpiRow++, "Non-Billable Time", summary.NonBillableHoursFormatted, $"{100 - summary.BillablePercentage:F1}% of total time");
-        AddKpiRow(wsSummary, kpiRow++, "Total Time Entries", summary.TotalEntriesCount.ToString(), "Logged entries");
-
-        // Project Breakdown Section
-        var projStartRow = kpiRow + 2;
-        wsSummary.Cell(projStartRow, 1).Value = "Project Breakdown";
-        wsSummary.Cell(projStartRow, 1).Style.Font.Bold = true;
-        wsSummary.Cell(projStartRow, 1).Style.Font.FontSize = 12;
-
-        var projHeaderRow = projStartRow + 1;
-        wsSummary.Cell(projHeaderRow, 1).Value = "Project Name";
-        wsSummary.Cell(projHeaderRow, 2).Value = "Total Time";
-        wsSummary.Cell(projHeaderRow, 3).Value = "Hours (Decimal)";
-        wsSummary.Cell(projHeaderRow, 4).Value = "Billable Time";
-        wsSummary.Cell(projHeaderRow, 5).Value = "% of Total";
-        wsSummary.Range(projHeaderRow, 1, projHeaderRow, 5).Style.Font.Bold = true;
-        wsSummary.Range(projHeaderRow, 1, projHeaderRow, 5).Style.Fill.BackgroundColor = XLColor.FromHtml("#E2E8F0");
-
-        var curProjRow = projHeaderRow + 1;
-        foreach (var proj in summary.Projects)
+        // Table Headers (Row 4)
+        var summaryHeaders = new[]
         {
-            wsSummary.Cell(curProjRow, 1).Value = proj.ProjectName;
-            wsSummary.Cell(curProjRow, 2).Value = proj.HoursFormatted;
-            wsSummary.Cell(curProjRow, 3).Value = Math.Round(proj.DurationMinutes / 60.0, 2);
-            wsSummary.Cell(curProjRow, 4).Value = FormatDuration(proj.BillableMinutes);
-            wsSummary.Cell(curProjRow, 5).Value = $"{proj.PercentageOfTotal:F1}%";
-            curProjRow++;
+            "Name of Employee",
+            "Projects Employee part of",
+            "Project Code",
+            "Total Hrs (Decimal)",
+            "Total Billable",
+            "Total Non Billable",
+            "Total Hrs",
+            "% of Billed Hrs",
+            "List of Non-Duplicate Tasks"
+        };
+
+        for (int i = 0; i < summaryHeaders.Length; i++)
+        {
+            wsSummary.Cell(4, i + 1).Value = summaryHeaders[i];
         }
 
-        // Employee Breakdown Section (if Manager/Admin)
-        if (isManagerOrAdmin && summary.Employees.Count > 0)
+        var summaryHeaderRange = wsSummary.Range(4, 1, 4, summaryHeaders.Length);
+        summaryHeaderRange.Style.Font.Bold = true;
+        summaryHeaderRange.Style.Font.FontSize = 10;
+        summaryHeaderRange.Style.Font.FontColor = XLColor.White;
+        summaryHeaderRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#3730A3"); // Deep Indigo
+        summaryHeaderRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        summaryHeaderRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        wsSummary.Row(4).Height = 26;
+
+        var currentRow = 5;
+
+        // Group entries by Employee
+        var employeeGroups = entries
+            .GroupBy(e => e.UserId)
+            .OrderBy(g => g.First().User?.FullName ?? "")
+            .ToList();
+
+        if (employeeGroups.Count == 0)
         {
-            var empStartRow = curProjRow + 2;
-            wsSummary.Cell(empStartRow, 1).Value = "Team Member Breakdown";
-            wsSummary.Cell(empStartRow, 1).Style.Font.Bold = true;
-            wsSummary.Cell(empStartRow, 1).Style.Font.FontSize = 12;
-
-            var empHeaderRow = empStartRow + 1;
-            wsSummary.Cell(empHeaderRow, 1).Value = "Employee Name";
-            wsSummary.Cell(empHeaderRow, 2).Value = "Email";
-            wsSummary.Cell(empHeaderRow, 3).Value = "Total Time";
-            wsSummary.Cell(empHeaderRow, 4).Value = "Billable Time";
-            wsSummary.Cell(empHeaderRow, 5).Value = "Entries Logged";
-            wsSummary.Range(empHeaderRow, 1, empHeaderRow, 5).Style.Font.Bold = true;
-            wsSummary.Range(empHeaderRow, 1, empHeaderRow, 5).Style.Fill.BackgroundColor = XLColor.FromHtml("#E2E8F0");
-
-            var curEmpRow = empHeaderRow + 1;
-            foreach (var emp in summary.Employees)
+            wsSummary.Range(5, 1, 5, 9).Merge();
+            wsSummary.Cell(5, 1).Value = "No time entries found for the selected date range.";
+            wsSummary.Cell(5, 1).Style.Font.Italic = true;
+            wsSummary.Cell(5, 1).Style.Font.FontColor = XLColor.FromHtml("#64748B");
+            wsSummary.Cell(5, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            currentRow = 6;
+        }
+        else
+        {
+            int empIndex = 0;
+            foreach (var empGroup in employeeGroups)
             {
-                wsSummary.Cell(curEmpRow, 1).Value = emp.FullName;
-                wsSummary.Cell(curEmpRow, 2).Value = emp.Email;
-                wsSummary.Cell(curEmpRow, 3).Value = emp.HoursFormatted;
-                wsSummary.Cell(curEmpRow, 4).Value = FormatDuration(emp.BillableMinutes);
-                wsSummary.Cell(curEmpRow, 5).Value = emp.EntryCount;
-                curEmpRow++;
+                var empName = empGroup.First().User?.FullName ?? "Unknown";
+                var empEntries = empGroup.ToList();
+                var empTotalMinutes = empEntries.Sum(e => e.DurationMinutes);
+                var empBillableMinutes = empEntries.Where(IsBillableEntry).Sum(e => e.DurationMinutes);
+                var empNonBillableMinutes = empTotalMinutes - empBillableMinutes;
+
+                var empTotalHoursDec = Math.Round(empTotalMinutes / 60.0, 2);
+                var empBillableHoursDec = Math.Round(empBillableMinutes / 60.0, 2);
+                var empNonBillableHoursDec = Math.Round(empNonBillableMinutes / 60.0, 2);
+                var empBilledPct = empTotalMinutes > 0 ? (double)empBillableMinutes / empTotalMinutes : 0.0;
+
+                // Group by project for this employee
+                var projectGroups = empEntries
+                    .GroupBy(e => e.ProjectId)
+                    .OrderByDescending(g => g.Sum(e => e.DurationMinutes))
+                    .ToList();
+
+                var projectCount = Math.Max(1, projectGroups.Count);
+                var empStartRow = currentRow;
+                var empEndRow = currentRow + projectCount - 1;
+                var zebraBg = (empIndex % 2 == 1) ? XLColor.FromHtml("#F8FAFC") : XLColor.White;
+
+                for (int p = 0; p < projectCount; p++)
+                {
+                    var r = empStartRow + p;
+                    var projGroup = p < projectGroups.Count ? projectGroups[p] : null;
+
+                    var projName = projGroup?.First().Project?.Name ?? "No Project";
+                    var projCode = projGroup?.First().Project?.Code ?? "-";
+                    var projMinutes = projGroup?.Sum(e => e.DurationMinutes) ?? 0;
+                    var projHoursDec = Math.Round(projMinutes / 60.0, 2);
+
+                    var uniqueTasks = projGroup != null
+                        ? projGroup
+                            .Select(e => e.Description?.Trim())
+                            .Where(d => !string.IsNullOrWhiteSpace(d))
+                            .OfType<string>()
+                            .Distinct()
+                            .ToList()
+                        : new List<string>();
+
+                    var tasksDisplay = uniqueTasks.Count > 0 ? string.Join(Environment.NewLine, uniqueTasks) : "-";
+
+                    // Column B: Project Name
+                    wsSummary.Cell(r, 2).Value = projName;
+                    wsSummary.Cell(r, 2).Style.Font.Bold = true;
+                    wsSummary.Cell(r, 2).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                    // Column C: Project Code
+                    wsSummary.Cell(r, 3).Value = projCode;
+                    wsSummary.Cell(r, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    wsSummary.Cell(r, 3).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                    // Column D: Total hrs (decimal) for each project
+                    wsSummary.Cell(r, 4).Value = projHoursDec;
+                    wsSummary.Cell(r, 4).Style.NumberFormat.Format = "0.00";
+                    wsSummary.Cell(r, 4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    wsSummary.Cell(r, 4).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                    // Column I: List of non duplicate tasks
+                    wsSummary.Cell(r, 9).Value = tasksDisplay;
+                    wsSummary.Cell(r, 9).Style.Alignment.WrapText = true;
+                    wsSummary.Cell(r, 9).Style.Alignment.Vertical = XLAlignmentVerticalValues.Top;
+
+                    // Row background & borders
+                    var rowRange = wsSummary.Range(r, 1, r, 9);
+                    rowRange.Style.Fill.BackgroundColor = zebraBg;
+                    rowRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+                    rowRange.Style.Border.InsideBorderColor = XLColor.FromHtml("#E2E8F0");
+                    rowRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                    rowRange.Style.Border.OutsideBorderColor = XLColor.FromHtml("#CBD5E1");
+                }
+
+                // If multiple projects, merge employee-level columns vertically
+                if (projectCount > 1)
+                {
+                    wsSummary.Range(empStartRow, 1, empEndRow, 1).Merge();
+                    wsSummary.Range(empStartRow, 5, empEndRow, 5).Merge();
+                    wsSummary.Range(empStartRow, 6, empEndRow, 6).Merge();
+                    wsSummary.Range(empStartRow, 7, empEndRow, 7).Merge();
+                    wsSummary.Range(empStartRow, 8, empEndRow, 8).Merge();
+                }
+
+                // Column A: Name of Employee
+                wsSummary.Cell(empStartRow, 1).Value = empName;
+                wsSummary.Cell(empStartRow, 1).Style.Font.Bold = true;
+                wsSummary.Cell(empStartRow, 1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                // Column E: Total Billable
+                wsSummary.Cell(empStartRow, 5).Value = empBillableHoursDec;
+                wsSummary.Cell(empStartRow, 5).Style.NumberFormat.Format = "0.00";
+                wsSummary.Cell(empStartRow, 5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                wsSummary.Cell(empStartRow, 5).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                // Column F: Total Non Billable
+                wsSummary.Cell(empStartRow, 6).Value = empNonBillableHoursDec;
+                wsSummary.Cell(empStartRow, 6).Style.NumberFormat.Format = "0.00";
+                wsSummary.Cell(empStartRow, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                wsSummary.Cell(empStartRow, 6).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                // Column G: Total hrs
+                wsSummary.Cell(empStartRow, 7).Value = empTotalHoursDec;
+                wsSummary.Cell(empStartRow, 7).Style.NumberFormat.Format = "0.00";
+                wsSummary.Cell(empStartRow, 7).Style.Font.Bold = true;
+                wsSummary.Cell(empStartRow, 7).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                wsSummary.Cell(empStartRow, 7).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                // Column H: % of billed hrs of total hrs
+                wsSummary.Cell(empStartRow, 8).Value = empBilledPct;
+                wsSummary.Cell(empStartRow, 8).Style.NumberFormat.Format = "0.0%";
+                wsSummary.Cell(empStartRow, 8).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                wsSummary.Cell(empStartRow, 8).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                currentRow = empEndRow + 1;
+                empIndex++;
             }
+
+            // Grand Total Row
+            wsSummary.Range(currentRow, 1, currentRow, 3).Merge();
+            wsSummary.Cell(currentRow, 1).Value = "Grand Total";
+            wsSummary.Cell(currentRow, 1).Style.Font.Bold = true;
+            wsSummary.Cell(currentRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            wsSummary.Cell(currentRow, 1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+            // Column D: Sum of all project decimal hours
+            wsSummary.Cell(currentRow, 4).FormulaA1 = $"=SUM(D5:D{currentRow - 1})";
+            wsSummary.Cell(currentRow, 4).Style.NumberFormat.Format = "0.00";
+            wsSummary.Cell(currentRow, 4).Style.Font.Bold = true;
+            wsSummary.Cell(currentRow, 4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+
+            // Column E: Grand Billable
+            var grandBillableHours = Math.Round(entries.Where(IsBillableEntry).Sum(e => e.DurationMinutes) / 60.0, 2);
+            wsSummary.Cell(currentRow, 5).Value = grandBillableHours;
+            wsSummary.Cell(currentRow, 5).Style.NumberFormat.Format = "0.00";
+            wsSummary.Cell(currentRow, 5).Style.Font.Bold = true;
+            wsSummary.Cell(currentRow, 5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+
+            // Column F: Grand Non-Billable
+            var grandTotalMinutes = entries.Sum(e => e.DurationMinutes);
+            var grandNonBillableHours = Math.Round((grandTotalMinutes - entries.Where(IsBillableEntry).Sum(e => e.DurationMinutes)) / 60.0, 2);
+            wsSummary.Cell(currentRow, 6).Value = grandNonBillableHours;
+            wsSummary.Cell(currentRow, 6).Style.NumberFormat.Format = "0.00";
+            wsSummary.Cell(currentRow, 6).Style.Font.Bold = true;
+            wsSummary.Cell(currentRow, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+
+            // Column G: Grand Total Hours
+            var grandTotalHours = Math.Round(grandTotalMinutes / 60.0, 2);
+            wsSummary.Cell(currentRow, 7).Value = grandTotalHours;
+            wsSummary.Cell(currentRow, 7).Style.NumberFormat.Format = "0.00";
+            wsSummary.Cell(currentRow, 7).Style.Font.Bold = true;
+            wsSummary.Cell(currentRow, 7).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+
+            // Column H: Overall % Billed
+            var grandBilledPct = grandTotalMinutes > 0 ? (double)entries.Where(IsBillableEntry).Sum(e => e.DurationMinutes) / grandTotalMinutes : 0.0;
+            wsSummary.Cell(currentRow, 8).Value = grandBilledPct;
+            wsSummary.Cell(currentRow, 8).Style.NumberFormat.Format = "0.0%";
+            wsSummary.Cell(currentRow, 8).Style.Font.Bold = true;
+            wsSummary.Cell(currentRow, 8).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+
+            // Column I: Empty for grand total
+            wsSummary.Cell(currentRow, 9).Value = "";
+
+            var totalRowRange = wsSummary.Range(currentRow, 1, currentRow, 9);
+            totalRowRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#E0E7FF"); // Light Indigo
+            totalRowRange.Style.Border.TopBorder = XLBorderStyleValues.Medium;
+            totalRowRange.Style.Border.TopBorderColor = XLColor.FromHtml("#4F46E5");
+            totalRowRange.Style.Border.BottomBorder = XLBorderStyleValues.Double;
+            totalRowRange.Style.Border.BottomBorderColor = XLColor.FromHtml("#4F46E5");
+            wsSummary.Row(currentRow).Height = 24;
         }
 
-        wsSummary.Columns().AdjustToContents();
+        // Column Widths
+        wsSummary.Column(1).Width = 24;
+        wsSummary.Column(2).Width = 26;
+        wsSummary.Column(3).Width = 15;
+        wsSummary.Column(4).Width = 18;
+        wsSummary.Column(5).Width = 16;
+        wsSummary.Column(6).Width = 18;
+        wsSummary.Column(7).Width = 16;
+        wsSummary.Column(8).Width = 20;
+        wsSummary.Column(9).Width = 45;
 
         // -------------------------------------------------------------
         // Sheet 2: Detailed Time Entries
@@ -418,18 +584,6 @@ public class ReportService : IReportService
         var pdfBytes = document.GeneratePdf();
         var fileName = $"TimePulse_Report_{startUtc:yyyyMMdd}_{endUtc:yyyyMMdd}.pdf";
         return (pdfBytes, fileName, "application/pdf");
-    }
-
-    private static void AddKpiRow(IXLWorksheet ws, int row, string metric, string value, string details)
-    {
-        ws.Cell(row, 1).Value = metric;
-        ws.Cell(row, 1).Style.Font.Bold = true;
-        ws.Cell(row, 2).Value = value;
-        ws.Cell(row, 2).Style.Font.Bold = true;
-        ws.Cell(row, 2).Style.Font.FontColor = XLColor.FromHtml("#4F46E5");
-        ws.Cell(row, 3).Value = details;
-        ws.Cell(row, 3).Style.Font.Italic = true;
-        ws.Cell(row, 3).Style.Font.FontColor = XLColor.FromHtml("#64748B");
     }
 
     private class KpiBox : IComponent
