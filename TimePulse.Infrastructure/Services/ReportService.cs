@@ -126,14 +126,14 @@ public class ReportService : IReportService
         var summaryHeaders = new[]
         {
             "Name of Employee",
-            "Projects Employee part of",
+            "Projects",
             "Project Code",
             "Total Hrs (Decimal)",
             "Total Billable",
             "Total Non Billable",
             "Total Hrs",
             "% of Billed Hrs",
-            "List of Non-Duplicate Tasks"
+            "Tasks"
         };
 
         for (int i = 0; i < summaryHeaders.Length; i++)
