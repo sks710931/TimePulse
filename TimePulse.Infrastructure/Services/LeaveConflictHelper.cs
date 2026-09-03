@@ -15,11 +15,9 @@ public static class LeaveConflictHelper
         Leave leave,
         int timezoneOffsetMinutes = 0)
     {
-        // Convert UTC entry times to the user's local times
-        // Note: JavaScript getTimezoneOffset returns (UTC - Local) in minutes.
-        // E.g. IST (UTC+5:30) is -330 minutes. Local = UTC - (-330) = UTC + 330.
-        var localStart = entryStartUtc.AddMinutes(-timezoneOffsetMinutes);
-        var localEnd = entryEndUtc.AddMinutes(-timezoneOffsetMinutes);
+        // TimePulse timestamps are stored in UTC representing the user's wall-clock time
+        var localStart = entryStartUtc;
+        var localEnd = entryEndUtc;
 
         var leaveDate = leave.Date;
         var dayStart = leaveDate.ToDateTime(TimeOnly.MinValue);

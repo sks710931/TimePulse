@@ -85,11 +85,8 @@ public class TimeEntryService : ITimeEntryService
         var isBillable = project?.IsBillable ?? false;
 
         // Check for leave conflicts using Option 2
-        var timezoneOffset = GetTimezoneOffsetMinutes();
-        var localStart = request.StartTimeUtc.AddMinutes(-timezoneOffset);
-        var localEnd = request.EndTimeUtc.AddMinutes(-timezoneOffset);
-        var startDate = DateOnly.FromDateTime(localStart);
-        var endDate = DateOnly.FromDateTime(localEnd);
+        var startDate = DateOnly.FromDateTime(request.StartTimeUtc);
+        var endDate = DateOnly.FromDateTime(request.EndTimeUtc);
 
         var leaves = await _leaveRepository.GetForDateRangeAsync(userId, startDate, endDate, cancellationToken);
         foreach (var leave in leaves)
@@ -97,8 +94,7 @@ public class TimeEntryService : ITimeEntryService
             var (hasConflict, conflictReason) = LeaveConflictHelper.CheckConflict(
                 request.StartTimeUtc,
                 request.EndTimeUtc,
-                leave,
-                timezoneOffset);
+                leave);
 
             if (hasConflict)
             {
@@ -167,11 +163,8 @@ public class TimeEntryService : ITimeEntryService
         var isBillable = project?.IsBillable ?? false;
 
         // Check for leave conflicts using Option 2
-        var timezoneOffset = GetTimezoneOffsetMinutes();
-        var localStart = request.StartTimeUtc.AddMinutes(-timezoneOffset);
-        var localEnd = request.EndTimeUtc.AddMinutes(-timezoneOffset);
-        var startDate = DateOnly.FromDateTime(localStart);
-        var endDate = DateOnly.FromDateTime(localEnd);
+        var startDate = DateOnly.FromDateTime(request.StartTimeUtc);
+        var endDate = DateOnly.FromDateTime(request.EndTimeUtc);
 
         var leaves = await _leaveRepository.GetForDateRangeAsync(entry.UserId, startDate, endDate, cancellationToken);
         foreach (var leave in leaves)
@@ -179,8 +172,7 @@ public class TimeEntryService : ITimeEntryService
             var (hasConflict, conflictReason) = LeaveConflictHelper.CheckConflict(
                 request.StartTimeUtc,
                 request.EndTimeUtc,
-                leave,
-                timezoneOffset);
+                leave);
 
             if (hasConflict)
             {

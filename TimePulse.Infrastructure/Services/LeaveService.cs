@@ -111,11 +111,9 @@ public class LeaveService : ILeaveService
 
             if (hasConflict)
             {
-                var localEntryStart = entry.StartTimeUtc.AddMinutes(-timezoneOffset);
-                var localEntryEnd = entry.EndTimeUtc.AddMinutes(-timezoneOffset);
                 return Result<LeaveDto>.Failure(
                     $"Cannot apply for {FormatLeaveType(request.LeaveType)} leave on {request.Date:yyyy-MM-dd}: " +
-                    $"You have an existing time entry ({localEntryStart:hh\\:mm tt} - {localEntryEnd:hh\\:mm tt}) that conflicts with this leave period. " +
+                    $"You have an existing time entry ({entry.StartTimeUtc:hh\\:mm tt} - {entry.EndTimeUtc:hh\\:mm tt}) that conflicts with this leave period. " +
                     $"Please adjust or delete that time entry first.");
             }
         }
@@ -187,11 +185,9 @@ public class LeaveService : ILeaveService
 
             if (hasConflict)
             {
-                var localEntryStart = entry.StartTimeUtc.AddMinutes(-timezoneOffset);
-                var localEntryEnd = entry.EndTimeUtc.AddMinutes(-timezoneOffset);
                 return Result<LeaveDto>.Failure(
                     $"Cannot update to {FormatLeaveType(request.LeaveType)} leave on {request.Date:yyyy-MM-dd}: " +
-                    $"You have an existing time entry ({localEntryStart:hh\\:mm tt} - {localEntryEnd:hh\\:mm tt}) that conflicts with this leave period. " +
+                    $"You have an existing time entry ({entry.StartTimeUtc:hh\\:mm tt} - {entry.EndTimeUtc:hh\\:mm tt}) that conflicts with this leave period. " +
                     $"Please adjust or delete that time entry first.");
             }
         }
