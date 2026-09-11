@@ -6,6 +6,7 @@ import type { UserProfile } from '../../api/authApi'
 import type { BrandSettings } from '../../api/brandingApi'
 import type { TabId } from '../layout/Sidebar'
 import { leaveApi } from '../../api/leaveApi'
+import { timeEntryApi } from '../../api/timeEntryApi'
 
 interface OverviewTabProps {
   user: UserProfile | null
@@ -17,6 +18,8 @@ export function OverviewTab({ user, branding, onNavigateTab }: OverviewTabProps)
   const isAdmin = Boolean(user?.roles.includes('Admin'))
   const [leavesTaken, setLeavesTaken] = useState<number | null>(null)
   const [leavesSubtitle, setLeavesSubtitle] = useState<string>('Loading...')
+  const [todayMinutes, setTodayMinutes] = useState<number | null>(null)
+  const [todaySubtitle, setTodaySubtitle] = useState<string>('Loading...')
 
   useEffect(() => {
     let isMounted = true
@@ -70,6 +73,45 @@ export function OverviewTab({ user, branding, onNavigateTab }: OverviewTabProps)
     }
   }, [user?.id])
 
+  useEffect(() => {
+    let isMounted = true
+    const fetchTodayTracked = async () => {
+      try {
+        const now = new Date()
+        const todayStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)).toISOString()
+        const todayEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)).toISOString()
+
+        const res = await timeEntryApi.getTimeEntries(1, 100, todayStart, todayEnd)
+        if (!isMounted) return
+
+        const totalMinutes = res.items.reduce((sum, item) => sum + item.durationMinutes, 0)
+        setTodayMinutes(totalMinutes)
+        if (res.items.length === 0) {
+          setTodaySubtitle('No time logged today')
+        } else {
+          setTodaySubtitle(`${res.items.length} ${res.items.length === 1 ? 'entry' : 'entries'} logged today`)
+        }
+      } catch {
+        if (isMounted) {
+          setTodayMinutes(0)
+          setTodaySubtitle('No time logged today')
+        }
+      }
+    }
+
+    fetchTodayTracked()
+    return () => {
+      isMounted = false
+    }
+  }, [user?.id])
+
+  const formatTrackedTime = (mins: number | null) => {
+    if (mins === null) return '...'
+    const h = Math.floor(mins / 60)
+    const m = mins % 60
+    return `${h}h ${String(m).padStart(2, '0')}m`
+  }
+
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
@@ -88,8 +130,8 @@ export function OverviewTab({ user, branding, onNavigateTab }: OverviewTabProps)
 
         <SummaryWidget
           title="Today's Tracked"
-          value="0h 00m"
-          subtitle="No active timers right now"
+          value={formatTrackedTime(todayMinutes)}
+          subtitle={todaySubtitle}
           icon={Clock}
           iconColor="text-purple-500"
         />
