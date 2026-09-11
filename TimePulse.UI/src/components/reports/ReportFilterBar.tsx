@@ -157,10 +157,10 @@ export function ReportFilterBar({
       </div>
 
       {/* Bottom Row: Detailed Date Range & Granular Filters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 pt-3 border-t border-slate-100 dark:border-slate-800/80">
         {/* Date Range Inputs */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
+        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-between sm:justify-start">
+          <div className="relative flex-1 sm:w-[155px] sm:flex-none">
             <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-slate-400">
               <Calendar className="w-3.5 h-3.5" />
             </span>
@@ -172,8 +172,8 @@ export function ReportFilterBar({
               title="Start Date"
             />
           </div>
-          <span className="text-xs text-slate-400">to</span>
-          <div className="relative flex-1">
+          <span className="text-xs font-medium text-slate-400 shrink-0">to</span>
+          <div className="relative flex-1 sm:w-[155px] sm:flex-none">
             <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-slate-400">
               <Calendar className="w-3.5 h-3.5" />
             </span>
@@ -189,14 +189,14 @@ export function ReportFilterBar({
 
         {/* Employee Filter (Managers & Admins only) */}
         {isManagerOrAdmin && (
-          <div className="relative">
+          <div className="relative flex-1 min-w-[200px]">
             <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-slate-400">
               <User className="w-3.5 h-3.5" />
             </span>
             <select
               value={selectedUserId}
               onChange={(e) => onChangeUserId(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 truncate"
             >
               <option value="">All Team Members</option>
               {usersList.map((u) => (
@@ -209,14 +209,14 @@ export function ReportFilterBar({
         )}
 
         {/* Project Filter */}
-        <div className="relative">
+        <div className="relative flex-1 min-w-[170px]">
           <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-slate-400">
             <Folder className="w-3.5 h-3.5" />
           </span>
           <select
             value={selectedProjectId}
             onChange={(e) => onChangeProjectId(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 truncate"
           >
             <option value="">All Projects</option>
             {projectsList.map((p) => (
@@ -228,14 +228,14 @@ export function ReportFilterBar({
         </div>
 
         {/* Billable Status Filter */}
-        <div className="relative">
+        <div className="relative flex-1 min-w-[150px]">
           <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-slate-400">
             <DollarSign className="w-3.5 h-3.5" />
           </span>
           <select
             value={billableFilter}
             onChange={(e) => onChangeBillableFilter(e.target.value as 'all' | 'billable' | 'non_billable')}
-            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 truncate"
           >
             <option value="all">All Hours</option>
             <option value="billable">Billable Only</option>
