@@ -17,6 +17,7 @@ public class TimePulseDbContext : DbContext, IApplicationDbContext
     public DbSet<UserInvitation> UserInvitations => Set<UserInvitation>();
     public DbSet<TimeEntry> TimeEntries => Set<TimeEntry>();
     public DbSet<Leave> Leaves => Set<Leave>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
     public TimePulseDbContext(DbContextOptions<TimePulseDbContext> options)
         : base(options)

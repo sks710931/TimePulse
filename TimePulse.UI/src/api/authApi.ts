@@ -27,6 +27,18 @@ export interface AcceptInvitationPayload {
   confirmPassword: string
 }
 
+export interface ValidateResetTokenResponse {
+  isValid: boolean
+  email?: string
+  message?: string
+}
+
+export interface ResetPasswordPayload {
+  token: string
+  newPassword: string
+  confirmPassword: string
+}
+
 export const authApi = {
   async getMe(): Promise<UserProfile> {
     const res = await apiFetch('/api/auth/me')
@@ -106,5 +118,43 @@ export const authApi = {
 
   async changePassword(payload: { currentPassword: string; newPassword: string }): Promise<{ message: string }> {
     return apiClient.post<{ message: string }>('/api/auth/change-password', payload)
+  },
+
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const res = await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      const err = data.errors ? data.errors.join(' ') : data.error || 'Failed to send password reset email'
+      throw new Error(err)
+    }
+    return res.json()
+  },
+
+  async validateResetToken(token: string): Promise<ValidateResetTokenResponse> {
+    const res = await fetch(`/api/auth/reset-password/validate?token=${encodeURIComponent(token)}`)
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      const err = data.errors ? data.errors.join(' ') : data.error || 'Invalid or expired password reset link'
+      throw new Error(err)
+    }
+    return res.json()
+  },
+
+  async resetPassword(payload: ResetPasswordPayload): Promise<{ message: string }> {
+    const res = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      const err = data.errors ? data.errors.join(' ') : data.error || 'Failed to reset password'
+      throw new Error(err)
+    }
+    return res.json()
   },
 }

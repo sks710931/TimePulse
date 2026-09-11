@@ -7,6 +7,8 @@ import { applyThemeToDom, applyBrandColorsToDom } from './store/slices/themeSlic
 import { ProtectedRoute } from './components/common/ProtectedRoute'
 import { PublicOnlyRoute } from './components/common/PublicOnlyRoute'
 import { LoginPage } from './pages/LoginPage'
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
+import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { AcceptInvitationPage } from './pages/AcceptInvitationPage'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { OverviewPage } from './pages/OverviewPage'
@@ -72,12 +74,14 @@ function App() {
           }
         />
 
-        {/* Public Invitation Accept Route */}
+        {/* Public Invitation Accept & Password Reset Routes */}
         <Route path="/invite/accept" element={<AcceptInvitationPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Public Routes (Redirect to /overview if already authenticated) */}
         <Route element={<PublicOnlyRoute />}>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/register" element={<Navigate to="/login" replace />} />
         </Route>
 

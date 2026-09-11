@@ -132,6 +132,60 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Account activated successfully." });
     }
 
+    [AllowAnonymous]
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            return BadRequest(new { error = "Email address is required." });
+        }
+
+        var result = await _authService.RequestPasswordResetAsync(request, cancellationToken);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors });
+        }
+
+        return Ok(new { message = "If an account with that email exists, password reset instructions have been sent." });
+    }
+
+    [AllowAnonymous]
+    [HttpGet("reset-password/validate")]
+    public async Task<IActionResult> ValidateResetToken([FromQuery] string token, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return BadRequest(new { error = "Reset token is required." });
+        }
+
+        var result = await _authService.ValidateResetTokenAsync(token, cancellationToken);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors });
+        }
+
+        return Ok(result.Data);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token))
+        {
+            return BadRequest(new { error = "Reset token is required." });
+        }
+
+        var result = await _authService.ResetPasswordAsync(request, cancellationToken);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors });
+        }
+
+        return Ok(new { message = "Your password has been successfully reset. You can now log in." });
+    }
+
     [Authorize]
     [HttpGet("me")]
     public async Task<IActionResult> Me(CancellationToken cancellationToken)

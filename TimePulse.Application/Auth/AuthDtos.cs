@@ -6,6 +6,12 @@ public record RegisterRequest(string Email, string Password, string FullName);
 
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 
+public record ForgotPasswordRequest(string Email);
+
+public record ResetPasswordRequest(string Token, string NewPassword, string ConfirmPassword);
+
+public record ValidateResetTokenResponse(bool IsValid, string? Email, string? Message);
+
 public record AuthResult
 {
     public bool Succeeded { get; init; }

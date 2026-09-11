@@ -1,5 +1,8 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using TimePulse.Application.Auth;
 using TimePulse.Application.Common.Interfaces;
 using TimePulse.Application.Common.Models;
@@ -11,17 +14,26 @@ namespace TimePulse.Infrastructure.Auth;
 public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IPasswordResetTokenRepository _passwordResetTokenRepository;
     private readonly ITokenService _tokenService;
+    private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         IUserRepository userRepository,
+        IPasswordResetTokenRepository passwordResetTokenRepository,
         ITokenService tokenService,
-        IConfiguration configuration)
+        IEmailService emailService,
+        IConfiguration configuration,
+        ILogger<AuthService> logger)
     {
         _userRepository = userRepository;
+        _passwordResetTokenRepository = passwordResetTokenRepository;
         _tokenService = tokenService;
+        _emailService = emailService;
         _configuration = configuration;
+        _logger = logger;
     }
 
     public async Task<AuthResult> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
@@ -160,5 +172,169 @@ public class AuthService : IAuthService
             accessToken,
             rawRefreshToken,
             _tokenService.GetAccessTokenExpiration());
+    }
+
+    public async Task<Result<bool>> RequestPasswordResetAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            return Result<bool>.Failure("Email address is required.");
+        }
+
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var user = await _userRepository.GetByEmailAsync(normalizedEmail, cancellationToken);
+
+        if (user is null)
+        {
+            // Return success to prevent email enumeration, but do not send email
+            return Result<bool>.Success(true);
+        }
+
+        // Generate cryptographically secure token
+        var rawToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+        var tokenHash = HashToken(rawToken);
+
+        // Invalidate any existing pending tokens for this user
+        await _passwordResetTokenRepository.InvalidateAllForUserAsync(user.Id, cancellationToken);
+
+        var resetToken = PasswordResetToken.Create(user.Id, normalizedEmail, tokenHash, expiryHours: 2);
+        await _passwordResetTokenRepository.AddAsync(resetToken, cancellationToken);
+        await _passwordResetTokenRepository.SaveChangesAsync(cancellationToken);
+
+        // Construct reset link
+        string baseUrl;
+        if (!string.IsNullOrWhiteSpace(_configuration["App:BaseUrl"]))
+        {
+            baseUrl = _configuration["App:BaseUrl"]!;
+        }
+        else if (!string.IsNullOrWhiteSpace(_configuration["ClientUrl"]))
+        {
+            baseUrl = _configuration["ClientUrl"]!;
+        }
+        else
+        {
+            baseUrl = "http://localhost:5173";
+        }
+        baseUrl = baseUrl.TrimEnd('/');
+        var resetUrl = $"{baseUrl}/reset-password?token={rawToken}";
+
+        var emailResult = await _emailService.SendPasswordResetEmailAsync(
+            user.Email,
+            user.FullName,
+            resetUrl,
+            expiryHours: 2,
+            cancellationToken);
+
+        if (!emailResult.Succeeded)
+        {
+            _logger.LogError("Failed to send password reset email to {Email}: {Errors}",
+                normalizedEmail, string.Join(", ", emailResult.Errors));
+            return Result<bool>.Failure("Password reset email cannot be sent, contact your administrator.");
+        }
+
+        return Result<bool>.Success(true);
+    }
+
+    public async Task<Result<ValidateResetTokenResponse>> ValidateResetTokenAsync(string token, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return Result<ValidateResetTokenResponse>.Failure("Reset token is required.");
+        }
+
+        var tokenHash = HashToken(token.Trim());
+        var resetToken = await _passwordResetTokenRepository.GetByTokenHashAsync(tokenHash, cancellationToken);
+
+        if (resetToken is null)
+        {
+            return Result<ValidateResetTokenResponse>.Failure("Password reset link is invalid.");
+        }
+
+        if (resetToken.IsConsumed)
+        {
+            return Result<ValidateResetTokenResponse>.Failure("This password reset link has already been used. Please request a new link.");
+        }
+
+        if (resetToken.IsExpired)
+        {
+            return Result<ValidateResetTokenResponse>.Failure("This password reset link has expired. Please request a new link.");
+        }
+
+        return Result<ValidateResetTokenResponse>.Success(new ValidateResetTokenResponse(true, resetToken.Email, null));
+    }
+
+    public async Task<Result<bool>> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token))
+        {
+            return Result<bool>.Failure("Reset token is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
+        {
+            return Result<bool>.Failure("New password must be at least 6 characters long.");
+        }
+
+        if (request.NewPassword != request.ConfirmPassword)
+        {
+            return Result<bool>.Failure("Passwords do not match.");
+        }
+
+        var tokenHash = HashToken(request.Token.Trim());
+        var resetToken = await _passwordResetTokenRepository.GetByTokenHashAsync(tokenHash, cancellationToken);
+
+        if (resetToken is null || !resetToken.IsValid)
+        {
+            return Result<bool>.Failure("This password reset link is invalid or has expired.");
+        }
+
+        var user = await _userRepository.GetByIdWithRefreshTokensAsync(resetToken.UserId, cancellationToken);
+        if (user is null)
+        {
+            return Result<bool>.Failure("User account could not be found.");
+        }
+
+        var newHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.UpdatePassword(newHash);
+
+        // Mark token as consumed
+        resetToken.Consume();
+
+        // Revoke all active refresh tokens for the user
+        user.RevokeAllRefreshTokens();
+
+        await _passwordResetTokenRepository.SaveChangesAsync(cancellationToken);
+        await _userRepository.SaveChangesAsync(cancellationToken);
+
+        // Send confirmation email
+        string baseUrl;
+        if (!string.IsNullOrWhiteSpace(_configuration["App:BaseUrl"]))
+        {
+            baseUrl = _configuration["App:BaseUrl"]!;
+        }
+        else if (!string.IsNullOrWhiteSpace(_configuration["ClientUrl"]))
+        {
+            baseUrl = _configuration["ClientUrl"]!;
+        }
+        else
+        {
+            baseUrl = "http://localhost:5173";
+        }
+        baseUrl = baseUrl.TrimEnd('/');
+        var loginUrl = $"{baseUrl}/login";
+
+        _ = _emailService.SendPasswordResetSuccessEmailAsync(
+            user.Email,
+            user.FullName,
+            loginUrl,
+            cancellationToken);
+
+        return Result<bool>.Success(true);
+    }
+
+    private static string HashToken(string token)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 }

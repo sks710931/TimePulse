@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { Lock, Mail, ArrowRight, Loader2 } from 'lucide-react'
 
 interface LoginFormProps {
@@ -38,9 +39,17 @@ export function LoginForm({ isLoading, onSubmit }: LoginFormProps) {
       </div>
 
       <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
-          Password
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+            Password
+          </label>
+          <Link
+            to="/forgot-password"
+            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 hover:underline transition-colors"
+          >
+            Forgot Password?
+          </Link>
+        </div>
         <div className="relative">
           <Lock className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
           <input
