@@ -117,7 +117,8 @@ export function OverviewTab({ user, branding, onNavigateTab }: OverviewTabProps)
         if (isMounted) {
           setProjectSummaries(summaries)
         }
-      } catch {
+      } catch (err) {
+        console.error('Failed to fetch project monthly summaries:', err)
         if (isMounted) {
           setProjectSummaries([])
         }

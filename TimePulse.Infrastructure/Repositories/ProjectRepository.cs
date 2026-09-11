@@ -27,12 +27,35 @@ public class ProjectRepository : IProjectRepository
 
     public async Task<IReadOnlyList<Project>> GetProjectsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
+        var teamIds = await _context.TeamMembers
+            .AsNoTracking()
+            .Where(tm => tm.UserId == userId)
+            .Select(tm => tm.TeamId)
+            .ToListAsync(cancellationToken);
+
+        if (teamIds.Count == 0)
+        {
+            return Array.Empty<Project>();
+        }
+
+        var projectIds = await _context.TeamProjects
+            .AsNoTracking()
+            .Where(tp => teamIds.Contains(tp.TeamId))
+            .Select(tp => tp.ProjectId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        if (projectIds.Count == 0)
+        {
+            return Array.Empty<Project>();
+        }
+
         return await _context.Projects
             .AsNoTracking()
             .Include(p => p.Teams)
                 .ThenInclude(tp => tp.Team)
                     .ThenInclude(t => t!.Members)
-            .Where(p => p.Teams.Any(tp => tp.Team != null && tp.Team.Members.Any(m => m.UserId == userId)))
+            .Where(p => projectIds.Contains(p.Id))
             .OrderByDescending(p => p.CreatedAtUtc)
             .ToListAsync(cancellationToken);
     }
