@@ -72,7 +72,9 @@ public static class HostingExtensions
     {
         var forwardedHeadersOptions = new ForwardedHeadersOptions
         {
-            ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+            ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+                | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+                | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedHost
         };
         forwardedHeadersOptions.KnownNetworks.Clear();
         forwardedHeadersOptions.KnownProxies.Clear();

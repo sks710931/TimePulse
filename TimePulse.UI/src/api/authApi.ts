@@ -121,10 +121,11 @@ export const authApi = {
   },
 
   async forgotPassword(email: string): Promise<{ message: string }> {
+    const clientBaseUrl = typeof window !== 'undefined' ? window.location.origin : undefined
     const res = await fetch('/api/auth/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, clientBaseUrl }),
     })
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))

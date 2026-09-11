@@ -6,7 +6,7 @@ public record RegisterRequest(string Email, string Password, string FullName);
 
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 
-public record ForgotPasswordRequest(string Email);
+public record ForgotPasswordRequest(string Email, string? ClientBaseUrl = null);
 
 public record ResetPasswordRequest(string Token, string NewPassword, string ConfirmPassword);
 

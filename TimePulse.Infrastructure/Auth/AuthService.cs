@@ -174,7 +174,7 @@ public class AuthService : IAuthService
             _tokenService.GetAccessTokenExpiration());
     }
 
-    public async Task<Result<bool>> RequestPasswordResetAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<bool>> RequestPasswordResetAsync(ForgotPasswordRequest request, string? clientBaseUrl = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Email))
         {
@@ -203,7 +203,15 @@ public class AuthService : IAuthService
 
         // Construct reset link
         string baseUrl;
-        if (!string.IsNullOrWhiteSpace(_configuration["App:BaseUrl"]))
+        if (!string.IsNullOrWhiteSpace(request.ClientBaseUrl))
+        {
+            baseUrl = request.ClientBaseUrl;
+        }
+        else if (!string.IsNullOrWhiteSpace(clientBaseUrl))
+        {
+            baseUrl = clientBaseUrl;
+        }
+        else if (!string.IsNullOrWhiteSpace(_configuration["App:BaseUrl"]))
         {
             baseUrl = _configuration["App:BaseUrl"]!;
         }
@@ -213,10 +221,12 @@ public class AuthService : IAuthService
         }
         else
         {
-            baseUrl = "http://localhost:5173";
+            baseUrl = "https://localhost:7001";
         }
         baseUrl = baseUrl.TrimEnd('/');
         var resetUrl = $"{baseUrl}/reset-password?token={rawToken}";
+
+        _logger.LogInformation("Password reset link generated for {Email}: {ResetUrl}", normalizedEmail, resetUrl);
 
         var emailResult = await _emailService.SendPasswordResetEmailAsync(
             user.Email,

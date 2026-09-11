@@ -141,7 +141,28 @@ public class AuthController : ControllerBase
             return BadRequest(new { error = "Email address is required." });
         }
 
-        var result = await _authService.RequestPasswordResetAsync(request, cancellationToken);
+        string? clientBaseUrl = request.ClientBaseUrl;
+        if (string.IsNullOrWhiteSpace(clientBaseUrl) && Request.Headers.TryGetValue("Origin", out var originHeader) && !string.IsNullOrWhiteSpace(originHeader))
+        {
+            clientBaseUrl = originHeader.ToString();
+        }
+        if (string.IsNullOrWhiteSpace(clientBaseUrl) && Request.Headers.TryGetValue("Referer", out var refererHeader) && !string.IsNullOrWhiteSpace(refererHeader))
+        {
+            try
+            {
+                var uri = new Uri(refererHeader.ToString());
+                clientBaseUrl = uri.GetLeftPart(UriPartial.Authority);
+            }
+            catch { }
+        }
+        if (string.IsNullOrWhiteSpace(clientBaseUrl))
+        {
+            var host = Request.Headers["X-Forwarded-Host"].FirstOrDefault() ?? Request.Host.Value;
+            var proto = Request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? Request.Scheme;
+            clientBaseUrl = $"{proto}://{host}{Request.PathBase}";
+        }
+
+        var result = await _authService.RequestPasswordResetAsync(request, clientBaseUrl, cancellationToken);
         if (!result.Succeeded)
         {
             return BadRequest(new { errors = result.Errors });
