@@ -42,3 +42,14 @@ public record UpdateProjectRequest(
 
 public record SetProjectTeamsRequest(
     IReadOnlyList<Guid> TeamIds);
+
+public record UserProjectMonthlySummaryDto(
+    Guid ProjectId,
+    string ProjectName,
+    string? ProjectCode,
+    string? ColorHex,
+    string? ClientName,
+    int DurationMinutes,
+    string HoursFormatted,
+    double TotalHoursDecimal,
+    int EntryCount);

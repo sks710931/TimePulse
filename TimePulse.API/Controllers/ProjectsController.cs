@@ -27,6 +27,24 @@ public class ProjectsController : ControllerBase
         return Ok(projects);
     }
 
+    [HttpGet("my-monthly-summary")]
+    public async Task<IActionResult> GetMyProjectMonthlySummaries(
+        [FromQuery] int? year = null,
+        [FromQuery] int? month = null,
+        CancellationToken cancellationToken = default)
+    {
+        var (callerUserId, isAdmin, isManager) = GetCallerInfo();
+        if (callerUserId == Guid.Empty)
+        {
+            return Unauthorized(new { error = "Invalid user identity." });
+        }
+
+        var summaries = await _projectService.GetUserProjectMonthlySummariesAsync(
+            callerUserId, isAdmin, isManager, year, month, cancellationToken);
+
+        return Ok(summaries);
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetProjectById(Guid id, CancellationToken cancellationToken)
     {

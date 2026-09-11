@@ -9,10 +9,14 @@ namespace TimePulse.Infrastructure.Services;
 public class ProjectService : IProjectService
 {
     private readonly IProjectRepository _projectRepository;
+    private readonly ITimeEntryRepository _timeEntryRepository;
 
-    public ProjectService(IProjectRepository projectRepository)
+    public ProjectService(
+        IProjectRepository projectRepository,
+        ITimeEntryRepository timeEntryRepository)
     {
         _projectRepository = projectRepository;
+        _timeEntryRepository = timeEntryRepository;
     }
 
     public async Task<IReadOnlyList<ProjectDto>> GetProjectsForCallerAsync(
@@ -183,6 +187,64 @@ public class ProjectService : IProjectService
         {
             return Result<ProjectDto>.Failure(ex.Message);
         }
+    }
+
+    public async Task<IReadOnlyList<UserProjectMonthlySummaryDto>> GetUserProjectMonthlySummariesAsync(
+        Guid callerUserId,
+        bool isCallerAdmin,
+        bool isCallerManager,
+        int? year = null,
+        int? month = null,
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<Project> userProjects;
+
+        if (isCallerAdmin || isCallerManager)
+        {
+            // If admin/manager is explicitly assigned to teams, use those; otherwise show all active projects
+            var assigned = await _projectRepository.GetProjectsByUserIdAsync(callerUserId, cancellationToken);
+            userProjects = assigned.Count > 0 ? assigned : await _projectRepository.GetAllAsync(cancellationToken);
+        }
+        else
+        {
+            // Employees only see projects assigned to teams they belong to
+            userProjects = await _projectRepository.GetProjectsByUserIdAsync(callerUserId, cancellationToken);
+        }
+
+        var now = DateTime.UtcNow;
+        var targetYear = year ?? now.Year;
+        var targetMonth = month ?? now.Month;
+        var startUtc = new DateTime(targetYear, targetMonth, 1, 0, 0, 0, DateTimeKind.Utc);
+        var endUtc = startUtc.AddMonths(1).AddTicks(-1);
+
+        var entries = await _timeEntryRepository.GetByUserAndDateRangeAsync(callerUserId, startUtc, endUtc, cancellationToken);
+        var entriesByProject = entries
+            .Where(e => e.ProjectId.HasValue)
+            .GroupBy(e => e.ProjectId!.Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var summaries = new List<UserProjectMonthlySummaryDto>();
+        foreach (var p in userProjects.Where(p => p.IsActive).OrderBy(p => p.Name))
+        {
+            var projEntries = entriesByProject.TryGetValue(p.Id, out var pe) ? pe : new List<TimeEntry>();
+            var totalMinutes = projEntries.Sum(e => e.DurationMinutes);
+            var hoursFormatted = $"{totalMinutes / 60}h {totalMinutes % 60:D2}m";
+            var totalHoursDecimal = Math.Round(totalMinutes / 60.0, 2);
+
+            summaries.Add(new UserProjectMonthlySummaryDto(
+                p.Id,
+                p.Name,
+                p.Code,
+                p.ColorHex,
+                p.ClientName,
+                totalMinutes,
+                hoursFormatted,
+                totalHoursDecimal,
+                projEntries.Count
+            ));
+        }
+
+        return summaries;
     }
 
     private static ProjectDto MapToDto(Project p) =>

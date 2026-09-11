@@ -44,9 +44,29 @@ export interface UpdateProjectPayload {
   isBillable: boolean
 }
 
+export interface UserProjectMonthlySummary {
+  projectId: string
+  projectName: string
+  projectCode?: string | null
+  colorHex?: string | null
+  clientName?: string | null
+  durationMinutes: number
+  hoursFormatted: string
+  totalHoursDecimal: number
+  entryCount: number
+}
+
 export const projectApi = {
   async getProjects(): Promise<ProjectDto[]> {
     return apiClient.get<ProjectDto[]>('/api/projects')
+  },
+
+  async getMyMonthlySummary(year?: number, month?: number): Promise<UserProjectMonthlySummary[]> {
+    const params = new URLSearchParams()
+    if (year) params.append('year', String(year))
+    if (month) params.append('month', String(month))
+    const query = params.toString() ? `?${params.toString()}` : ''
+    return apiClient.get<UserProjectMonthlySummary[]>(`/api/projects/my-monthly-summary${query}`)
   },
 
   async getProjectById(id: string): Promise<ProjectDto> {

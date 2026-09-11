@@ -22,4 +22,11 @@ public interface IProjectService
     Task<Result<ProjectDto>> UpdateProjectAsync(Guid id, UpdateProjectRequest request, CancellationToken cancellationToken = default);
     Task<Result<bool>> DeleteProjectAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Result<ProjectDto>> SetProjectTeamsAsync(Guid id, SetProjectTeamsRequest request, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<UserProjectMonthlySummaryDto>> GetUserProjectMonthlySummariesAsync(
+        Guid callerUserId,
+        bool isCallerAdmin,
+        bool isCallerManager,
+        int? year = null,
+        int? month = null,
+        CancellationToken cancellationToken = default);
 }
