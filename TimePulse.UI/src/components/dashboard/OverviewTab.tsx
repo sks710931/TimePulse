@@ -1,9 +1,11 @@
+import { useState, useEffect } from 'react'
 import { WelcomeCard } from './WelcomeCard'
 import { SummaryWidget } from './SummaryWidget'
-import { Shield, Clock, Users, Settings, ArrowRight } from 'lucide-react'
+import { Shield, Clock, Users, Settings, ArrowRight, Calendar } from 'lucide-react'
 import type { UserProfile } from '../../api/authApi'
 import type { BrandSettings } from '../../api/brandingApi'
 import type { TabId } from '../layout/Sidebar'
+import { leaveApi } from '../../api/leaveApi'
 
 interface OverviewTabProps {
   user: UserProfile | null
@@ -13,6 +15,60 @@ interface OverviewTabProps {
 
 export function OverviewTab({ user, branding, onNavigateTab }: OverviewTabProps) {
   const isAdmin = Boolean(user?.roles.includes('Admin'))
+  const [leavesTaken, setLeavesTaken] = useState<number | null>(null)
+  const [leavesSubtitle, setLeavesSubtitle] = useState<string>('Loading...')
+
+  useEffect(() => {
+    let isMounted = true
+    const fetchLeaves = async () => {
+      try {
+        const now = new Date()
+        const year = now.getFullYear()
+        const month = now.getMonth()
+        const monthName = now.toLocaleString('default', { month: 'short' })
+        const lastDay = new Date(year, month + 1, 0).getDate()
+        const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`
+        const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+        const leaves = await leaveApi.getLeaves(user?.id, startDate, endDate)
+        if (!isMounted) return
+
+        let total = 0
+        let fullDays = 0
+        let halfDays = 0
+
+        for (const l of leaves) {
+          if (l.leaveType === 'FullDay') {
+            total += 1.0
+            fullDays += 1
+          } else if (l.leaveType === 'FirstHalf' || l.leaveType === 'SecondHalf') {
+            total += 0.5
+            halfDays += 1
+          }
+        }
+
+        setLeavesTaken(total)
+        if (total === 0) {
+          setLeavesSubtitle(`No leaves in ${monthName} ${year}`)
+        } else {
+          const breakdownParts: string[] = []
+          if (fullDays > 0) breakdownParts.push(`${fullDays} full`)
+          if (halfDays > 0) breakdownParts.push(`${halfDays} half`)
+          setLeavesSubtitle(`${monthName} ${year} • ${breakdownParts.join(', ')}`)
+        }
+      } catch {
+        if (isMounted) {
+          setLeavesTaken(0)
+          setLeavesSubtitle('No leaves recorded')
+        }
+      }
+    }
+
+    fetchLeaves()
+    return () => {
+      isMounted = false
+    }
+  }, [user?.id])
 
   return (
     <div className="space-y-6">
@@ -39,10 +95,10 @@ export function OverviewTab({ user, branding, onNavigateTab }: OverviewTabProps)
         />
 
         <SummaryWidget
-          title="Security"
-          value="JWT httpOnly"
-          subtitle="Automated refresh rotation"
-          icon={Shield}
+          title="Leaves This Month"
+          value={leavesTaken !== null ? `${leavesTaken} ${leavesTaken === 1 ? 'day' : 'days'}` : '...'}
+          subtitle={leavesSubtitle}
+          icon={Calendar}
           iconColor="text-amber-500"
         />
       </div>
