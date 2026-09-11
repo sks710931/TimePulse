@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { WelcomeCard } from './WelcomeCard'
 import { SummaryWidget } from './SummaryWidget'
-import { Shield, Clock, Users, Settings, ArrowRight, Calendar, FolderKanban } from 'lucide-react'
+import { Shield, Clock, Users, Users2, Settings, ArrowRight, Calendar, CalendarOff, FolderKanban, FileBarChart } from 'lucide-react'
 import type { UserProfile } from '../../api/authApi'
 import type { BrandSettings } from '../../api/brandingApi'
 import type { TabId } from '../layout/Sidebar'
@@ -252,7 +252,7 @@ export function OverviewTab({ user, branding, onNavigateTab }: OverviewTabProps)
         <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
           Quick Launch & Operations
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
           <button
             onClick={() => onNavigateTab('timetracker')}
             className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 bg-slate-50/50 dark:bg-slate-950/40 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all text-left group cursor-pointer"
@@ -265,18 +265,68 @@ export function OverviewTab({ user, branding, onNavigateTab }: OverviewTabProps)
             <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Start recording time against projects and tasks</div>
           </button>
 
+          <button
+            onClick={() => onNavigateTab('leaves')}
+            className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-rose-500/50 dark:hover:border-rose-500/50 bg-slate-50/50 dark:bg-slate-950/40 hover:bg-rose-50/30 dark:hover:bg-rose-950/20 transition-all text-left group cursor-pointer"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <CalendarOff className="w-5 h-5 text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform" />
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-rose-500 group-hover:translate-x-0.5 transition-all" />
+            </div>
+            <div className="text-sm font-semibold text-slate-900 dark:text-white">Leaves</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Apply for time off and review leave records</div>
+          </button>
+
+          <button
+            onClick={() => onNavigateTab('reports')}
+            className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-amber-500/50 dark:hover:border-amber-500/50 bg-slate-50/50 dark:bg-slate-950/40 hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition-all text-left group cursor-pointer"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <FileBarChart className="w-5 h-5 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all" />
+            </div>
+            <div className="text-sm font-semibold text-slate-900 dark:text-white">Reports</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Generate summaries, timesheets, and attendance</div>
+          </button>
+
           {isAdmin && (
-            <button
-              onClick={() => onNavigateTab('users')}
-              className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 bg-slate-50/50 dark:bg-slate-950/40 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-all text-left group cursor-pointer"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <Users className="w-5 h-5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 group-hover:translate-x-0.5 transition-all" />
-              </div>
-              <div className="text-sm font-semibold text-slate-900 dark:text-white">User Management</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">View system users and manage role assignments</div>
-            </button>
+            <>
+              <button
+                onClick={() => onNavigateTab('projects')}
+                className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-sky-500/50 dark:hover:border-sky-500/50 bg-slate-50/50 dark:bg-slate-950/40 hover:bg-sky-50/30 dark:hover:bg-sky-950/20 transition-all text-left group cursor-pointer"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <FolderKanban className="w-5 h-5 text-sky-600 dark:text-sky-400 group-hover:scale-110 transition-transform" />
+                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-sky-500 group-hover:translate-x-0.5 transition-all" />
+                </div>
+                <div className="text-sm font-semibold text-slate-900 dark:text-white">Projects</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Configure client projects, billing, and team links</div>
+              </button>
+
+              <button
+                onClick={() => onNavigateTab('teams')}
+                className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-purple-500/50 dark:hover:border-purple-500/50 bg-slate-50/50 dark:bg-slate-950/40 hover:bg-purple-50/30 dark:hover:bg-purple-950/20 transition-all text-left group cursor-pointer"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <Users2 className="w-5 h-5 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" />
+                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-purple-500 group-hover:translate-x-0.5 transition-all" />
+                </div>
+                <div className="text-sm font-semibold text-slate-900 dark:text-white">Teams</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Organize team memberships and project access</div>
+              </button>
+
+              <button
+                onClick={() => onNavigateTab('users')}
+                className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 bg-slate-50/50 dark:bg-slate-950/40 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-all text-left group cursor-pointer"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <Users className="w-5 h-5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 group-hover:translate-x-0.5 transition-all" />
+                </div>
+                <div className="text-sm font-semibold text-slate-900 dark:text-white">User Management</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">View system users and manage role assignments</div>
+              </button>
+            </>
           )}
 
           <button
