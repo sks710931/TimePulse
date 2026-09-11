@@ -46,7 +46,7 @@ services:
       - Jwt__Key=TimePulse-Super-Secret-Key-That-Is-At-Least-32-Bytes-Long!
       - Jwt__Issuer=TimePulse
       - Jwt__Audience=TimePulse
-      - Jwt__AccessTokenExpirationMinutes=15
+      - Jwt__AccessTokenExpirationMinutes=60
       - Jwt__RefreshTokenExpirationDays=7
       # Microsoft Graph Email Service
       - TenantId=${TenantId}

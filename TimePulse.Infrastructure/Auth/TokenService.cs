@@ -44,7 +44,7 @@ public class TokenService : ITokenService
         }
 
         var expirationMinutes = int.Parse(
-            _configuration["Jwt:AccessTokenExpirationMinutes"] ?? "1");
+            _configuration["Jwt:AccessTokenExpirationMinutes"] ?? "60");
 
         var token = new JwtSecurityToken(
             issuer: _configuration["Jwt:Issuer"],
@@ -108,7 +108,7 @@ public class TokenService : ITokenService
     public DateTime GetAccessTokenExpiration()
     {
         var expirationMinutes = int.Parse(
-            _configuration["Jwt:AccessTokenExpirationMinutes"] ?? "1");
+            _configuration["Jwt:AccessTokenExpirationMinutes"] ?? "60");
         return DateTime.UtcNow.AddMinutes(expirationMinutes);
     }
 }
