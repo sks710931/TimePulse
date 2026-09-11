@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { Tag, Trash2, Loader2, Copy, Calendar } from 'lucide-react'
 import { ProjectPickerDropdown } from './ProjectPickerDropdown'
+import { TimeInput24 } from '../common/TimeInput24'
 import type { TimeEntryDto, UpdateTimeEntryPayload } from '../../api/timeEntryApi'
 import type { ProjectDto } from '../../api/projectApi'
 
@@ -306,24 +307,26 @@ export function TimeEntryRow({
 
         {/* Inline Time Range: start - end */}
         <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-mono text-xs bg-slate-50 dark:bg-slate-800/40 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700/60 focus-within:border-sky-400 dark:focus-within:border-sky-500 shrink-0">
-          <input
-            type="time"
+          <TimeInput24
             value={startTimeStr}
-            onChange={(e) => setStartTimeStr(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') e.currentTarget.blur()
+            onChange={(val) => {
+              setStartTimeStr(val)
             }}
-            className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none w-[54px] text-center text-xs [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+            onBlur={() => {
+              saveIfChanged({ startTimeStr })
+            }}
+            ariaLabel="Start time in 24-hour format"
           />
           <span className="text-slate-400 dark:text-slate-500">-</span>
-          <input
-            type="time"
+          <TimeInput24
             value={endTimeStr}
-            onChange={(e) => setEndTimeStr(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') e.currentTarget.blur()
+            onChange={(val) => {
+              setEndTimeStr(val)
             }}
-            className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none w-[54px] text-center text-xs [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+            onBlur={() => {
+              saveIfChanged({ endTimeStr })
+            }}
+            ariaLabel="End time in 24-hour format"
           />
         </div>
 

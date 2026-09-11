@@ -124,7 +124,7 @@ export function ApplyLeaveModal({ isOpen, onClose, onSubmit }: ApplyLeaveModalPr
               >
                 <Sunrise className="w-5 h-5 mb-1 text-orange-500" />
                 <span className="text-xs font-semibold">First Half</span>
-                <span className="text-[10px] text-slate-400 font-normal">Until 1:00 PM</span>
+                <span className="text-[10px] text-slate-400 font-normal">Until 13:00</span>
               </button>
 
               {/* Second Half */}
@@ -139,7 +139,7 @@ export function ApplyLeaveModal({ isOpen, onClose, onSubmit }: ApplyLeaveModalPr
               >
                 <Sunset className="w-5 h-5 mb-1 text-sky-500" />
                 <span className="text-xs font-semibold">Second Half</span>
-                <span className="text-[10px] text-slate-400 font-normal">From 1:00 PM</span>
+                <span className="text-[10px] text-slate-400 font-normal">From 13:00</span>
               </button>
             </div>
           </div>

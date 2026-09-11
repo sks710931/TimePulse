@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Tag, Calendar, Loader2 } from 'lucide-react'
 import { ProjectPickerDropdown } from './ProjectPickerDropdown'
+import { TimeInput24 } from '../common/TimeInput24'
 import type { ProjectDto } from '../../api/projectApi'
 import type { CreateTimeEntryPayload } from '../../api/timeEntryApi'
 
@@ -209,18 +210,16 @@ export function ManualEntryBar({
         <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800">
           {/* Time range: 10:40 - 11:40 */}
           <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-mono bg-slate-50 dark:bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800">
-            <input
-              type="time"
+            <TimeInput24
               value={startTimeStr}
-              onChange={(e) => setStartTimeStr(e.target.value)}
-              className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none w-[54px] text-center text-xs [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+              onChange={setStartTimeStr}
+              ariaLabel="Start time in 24-hour format"
             />
             <span className="text-slate-400 dark:text-slate-600">-</span>
-            <input
-              type="time"
+            <TimeInput24
               value={endTimeStr}
-              onChange={(e) => setEndTimeStr(e.target.value)}
-              className="bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none w-[54px] text-center text-xs [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+              onChange={setEndTimeStr}
+              ariaLabel="End time in 24-hour format"
             />
           </div>
 
