@@ -73,7 +73,7 @@ export function LeaveListTable({ leaves, showEmployee = false, onDelete }: Leave
         </div>
         <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">No Leaves Found</h4>
         <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-          No leaves recorded for the selected time range. Click &quot;Apply for Leave&quot; to log a scheduled day off.
+          No leaves recorded for the selected time range. Click &quot;Update Leave&quot; to log a scheduled day off.
         </p>
       </div>
     )

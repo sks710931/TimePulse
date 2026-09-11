@@ -37,7 +37,7 @@ export function ApplyLeaveModal({ isOpen, onClose, onSubmit }: ApplyLeaveModalPr
       })
       onClose()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to apply for leave.'
+      const msg = err instanceof Error ? err.message : 'Failed to update leave.'
       setErrorMessage(msg)
     } finally {
       setIsSubmitting(false)
@@ -54,7 +54,7 @@ export function ApplyLeaveModal({ isOpen, onClose, onSubmit }: ApplyLeaveModalPr
               <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Apply for Leave</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Update Leave</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">Record a full day or half day leave</p>
             </div>
           </div>

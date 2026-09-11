@@ -8,6 +8,22 @@ import { useAppSelector } from '../store/hooks'
 import { ApplyLeaveModal } from '../components/leaves/ApplyLeaveModal'
 import { LeaveListTable } from '../components/leaves/LeaveListTable'
 
+const MONTHS = [
+  { value: 0, label: 'All Months' },
+  { value: 1, label: 'January' },
+  { value: 2, label: 'February' },
+  { value: 3, label: 'March' },
+  { value: 4, label: 'April' },
+  { value: 5, label: 'May' },
+  { value: 6, label: 'June' },
+  { value: 7, label: 'July' },
+  { value: 8, label: 'August' },
+  { value: 9, label: 'September' },
+  { value: 10, label: 'October' },
+  { value: 11, label: 'November' },
+  { value: 12, label: 'December' },
+]
+
 export function LeavesPage() {
   const { user } = useAppSelector((state) => state.auth)
   const isManagerOrAdmin = Boolean(
@@ -16,6 +32,7 @@ export function LeavesPage() {
 
   const currentYear = new Date().getFullYear()
   const [selectedYear, setSelectedYear] = useState<number>(currentYear)
+  const [selectedMonth, setSelectedMonth] = useState<number>(0)
   const [selectedUserId, setSelectedUserId] = useState<string>('')
   const [users, setUsers] = useState<UserItemDto[]>([])
 
@@ -33,8 +50,16 @@ export function LeavesPage() {
   const loadLeaves = useCallback(async () => {
     setIsLoading(true)
     try {
-      const startDate = `${selectedYear}-01-01`
-      const endDate = `${selectedYear}-12-31`
+      let startDate = `${selectedYear}-01-01`
+      let endDate = `${selectedYear}-12-31`
+
+      if (selectedMonth > 0) {
+        const lastDay = new Date(selectedYear, selectedMonth, 0).getDate()
+        const mm = String(selectedMonth).padStart(2, '0')
+        startDate = `${selectedYear}-${mm}-01`
+        endDate = `${selectedYear}-${mm}-${String(lastDay).padStart(2, '0')}`
+      }
+
       const data = await leaveApi.getLeaves(
         selectedUserId || undefined,
         startDate,
@@ -46,7 +71,7 @@ export function LeavesPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [selectedUserId, selectedYear])
+  }, [selectedUserId, selectedYear, selectedMonth])
 
   useEffect(() => {
     loadLeaves()
@@ -86,7 +111,7 @@ export function LeavesPage() {
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm hover:shadow transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
-          Apply for Leave
+          Update Leave
         </button>
       </div>
 
@@ -95,7 +120,9 @@ export function LeavesPage() {
         {/* Total Leaves */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Leaves ({selectedYear})</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              Total Leaves ({selectedMonth === 0 ? selectedYear : `${MONTHS[selectedMonth].label} ${selectedYear}`})
+            </p>
             <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalLeaves}</h3>
             <p className="text-[11px] text-slate-400 mt-0.5">Recorded days off</p>
           </div>
@@ -143,6 +170,22 @@ export function LeavesPage() {
               {[currentYear - 1, currentYear, currentYear + 1].map((y) => (
                 <option key={y} value={y}>
                   {y}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Month Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Month:</span>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              className="text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 font-medium text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            >
+              {MONTHS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
                 </option>
               ))}
             </select>
