@@ -15,6 +15,8 @@ public class ReportService : IReportService
 {
     private readonly ITimeEntryRepository _timeEntryRepository;
     private readonly ILeaveRepository _leaveRepository;
+    private readonly ITeamRepository _teamRepository;
+    private readonly IUserRepository _userRepository;
     private readonly ILogger<ReportService> _logger;
 
     static ReportService()
@@ -26,10 +28,14 @@ public class ReportService : IReportService
     public ReportService(
         ITimeEntryRepository timeEntryRepository,
         ILeaveRepository leaveRepository,
+        ITeamRepository teamRepository,
+        IUserRepository userRepository,
         ILogger<ReportService> logger)
     {
         _timeEntryRepository = timeEntryRepository;
         _leaveRepository = leaveRepository;
+        _teamRepository = teamRepository;
+        _userRepository = userRepository;
         _logger = logger;
     }
 
@@ -167,17 +173,303 @@ public class ReportService : IReportService
         var currentRow = 5;
 
         var leavesByUser = leaves.GroupBy(l => l.UserId).ToDictionary(g => g.Key, g => g.ToList());
+        var entriesByUser = entries.GroupBy(e => e.UserId).ToDictionary(g => g.Key, g => g.ToList());
 
-        // Group entries by Employee
-        var employeeGroups = entries
-            .GroupBy(e => e.UserId)
-            .OrderBy(g => g.First().User?.FullName ?? "")
+        // Fetch all teams with details (includes Members with User, and Projects with Project)
+        var allTeams = await _teamRepository.GetAllWithDetailsAsync(cancellationToken);
+
+        // Determine all employee IDs to consider for the summary report
+        var allEmployeeIds = new HashSet<Guid>();
+
+        if (targetUserId.HasValue && targetUserId.Value != Guid.Empty)
+        {
+            allEmployeeIds.Add(targetUserId.Value);
+        }
+        else
+        {
+            // Include employees with logged time entries
+            foreach (var e in entries)
+            {
+                allEmployeeIds.Add(e.UserId);
+            }
+
+            // Include employees who are members of any team
+            foreach (var t in allTeams)
+            {
+                foreach (var m in t.Members)
+                {
+                    allEmployeeIds.Add(m.UserId);
+                }
+            }
+
+            // Include employees who have leaves in this period
+            foreach (var l in leaves)
+            {
+                allEmployeeIds.Add(l.UserId);
+            }
+        }
+
+        // Build User lookup (FullName, Email)
+        var userInfoMap = new Dictionary<Guid, (string FullName, string Email)>();
+
+        foreach (var t in allTeams)
+        {
+            foreach (var m in t.Members)
+            {
+                if (m.User != null && !userInfoMap.ContainsKey(m.UserId))
+                {
+                    userInfoMap[m.UserId] = (m.User.FullName, m.User.Email);
+                }
+            }
+        }
+
+        foreach (var e in entries)
+        {
+            if (e.User != null && !userInfoMap.ContainsKey(e.UserId))
+            {
+                userInfoMap[e.UserId] = (e.User.FullName, e.User.Email);
+            }
+        }
+
+        foreach (var l in leaves)
+        {
+            if (l.User != null && !userInfoMap.ContainsKey(l.UserId))
+            {
+                userInfoMap[l.UserId] = (l.User.FullName, l.User.Email);
+            }
+        }
+
+        foreach (var uid in allEmployeeIds)
+        {
+            if (!userInfoMap.ContainsKey(uid))
+            {
+                var u = await _userRepository.GetByIdAsync(uid, cancellationToken);
+                if (u != null)
+                {
+                    userInfoMap[uid] = (u.FullName, u.Email);
+                }
+                else
+                {
+                    userInfoMap[uid] = ("Unknown", "");
+                }
+            }
+        }
+
+        // Sort employees alphabetically by FullName
+        var sortedEmployeeIds = allEmployeeIds
+            .OrderBy(id => userInfoMap.TryGetValue(id, out var info) ? info.FullName : "")
             .ToList();
 
-        if (employeeGroups.Count == 0)
+        int empIndex = 0;
+        foreach (var empId in sortedEmployeeIds)
+        {
+            var empName = userInfoMap.TryGetValue(empId, out var info) ? info.FullName : "Unknown";
+            var empEntries = entriesByUser.TryGetValue(empId, out var userEntries) ? userEntries : new List<TimeEntry>();
+            var empLeaves = leavesByUser.TryGetValue(empId, out var userLeaves) ? userLeaves : new List<Leave>();
+            var empLeavesTaken = CalculateLeaveDays(empLeaves);
+
+            var empTotalMinutes = empEntries.Sum(e => e.DurationMinutes);
+            var empBillableMinutes = empEntries.Where(IsBillableEntry).Sum(e => e.DurationMinutes);
+            var empNonBillableMinutes = empTotalMinutes - empBillableMinutes;
+
+            var empTotalHoursDec = Math.Round(empTotalMinutes / 60.0, 2);
+            var empBillableHoursDec = Math.Round(empBillableMinutes / 60.0, 2);
+            var empNonBillableHoursDec = Math.Round(empNonBillableMinutes / 60.0, 2);
+            var empBilledPct = empTotalMinutes > 0 ? (double)empBillableMinutes / empTotalMinutes : 0.0;
+
+            // 1. Projects assigned to employee via team memberships
+            var assignedProjects = allTeams
+                .Where(t => t.Members.Any(m => m.UserId == empId))
+                .SelectMany(t => t.Projects)
+                .Select(tp => tp.Project)
+                .Where(p => p != null && p.IsActive)
+                .Select(p => p!)
+                .ToList();
+
+            // 2. Projects from actual logged time entries for this employee
+            var loggedProjects = empEntries
+                .Where(e => e.Project != null)
+                .Select(e => e.Project!)
+                .ToList();
+
+            // Combine both assigned projects and logged projects (distinct by Id)
+            var allEmpProjects = assignedProjects
+                .Concat(loggedProjects)
+                .DistinctBy(p => p.Id)
+                .ToList();
+
+            // Apply project filter if specified
+            if (filter.ProjectId.HasValue && filter.ProjectId.Value != Guid.Empty)
+            {
+                allEmpProjects = allEmpProjects.Where(p => p.Id == filter.ProjectId.Value).ToList();
+            }
+
+            // Apply billable filter if specified
+            if (filter.IsBillable.HasValue)
+            {
+                allEmpProjects = allEmpProjects.Where(p => p.IsBillable == filter.IsBillable.Value).ToList();
+            }
+
+            // Also check if employee has logged entries with no project (ProjectId == null)
+            var noProjectEntries = empEntries.Where(e => e.ProjectId == null).ToList();
+            bool includeNoProject = noProjectEntries.Count > 0
+                && (!filter.ProjectId.HasValue || filter.ProjectId.Value == Guid.Empty)
+                && (!filter.IsBillable.HasValue || !filter.IsBillable.Value);
+
+            // If employee has no matching projects, no "No Project" entries, and no entries at all:
+            if (allEmpProjects.Count == 0 && !includeNoProject && empEntries.Count == 0)
+            {
+                continue;
+            }
+
+            // If an employee has no team projects and no logged entries, but was explicitly targeted without projects:
+            if (allEmpProjects.Count == 0 && !includeNoProject)
+            {
+                continue;
+            }
+
+            // Build Project rows for this employee
+            var projectRows = new List<(string Name, string Code, double HoursDec, string TasksDisplay, int Minutes)>();
+
+            foreach (var proj in allEmpProjects)
+            {
+                var projEntries = empEntries.Where(e => e.ProjectId == proj.Id).ToList();
+                var projMinutes = projEntries.Sum(e => e.DurationMinutes);
+                var projHoursDec = Math.Round(projMinutes / 60.0, 2);
+                var projCode = proj.Code ?? "-";
+                var projName = proj.Name;
+
+                var uniqueTasks = projEntries
+                    .Select(e => e.Description?.Trim())
+                    .Where(d => !string.IsNullOrWhiteSpace(d))
+                    .OfType<string>()
+                    .Distinct()
+                    .ToList();
+
+                var tasksDisplay = uniqueTasks.Count > 0 ? string.Join(Environment.NewLine, uniqueTasks) : "-";
+
+                projectRows.Add((projName, projCode, projHoursDec, tasksDisplay, projMinutes));
+            }
+
+            if (includeNoProject)
+            {
+                var noProjMinutes = noProjectEntries.Sum(e => e.DurationMinutes);
+                var noProjHoursDec = Math.Round(noProjMinutes / 60.0, 2);
+                var uniqueTasks = noProjectEntries
+                    .Select(e => e.Description?.Trim())
+                    .Where(d => !string.IsNullOrWhiteSpace(d))
+                    .OfType<string>()
+                    .Distinct()
+                    .ToList();
+                var tasksDisplay = uniqueTasks.Count > 0 ? string.Join(Environment.NewLine, uniqueTasks) : "-";
+
+                projectRows.Add(("No Project", "-", noProjHoursDec, tasksDisplay, noProjMinutes));
+            }
+
+            // Order projects:
+            // 1. Projects with hours logged first (descending by minutes)
+            // 2. Followed by projects with 0 hours logged (alphabetical by name)
+            var orderedProjects = projectRows
+                .OrderByDescending(p => p.Minutes > 0)
+                .ThenByDescending(p => p.Minutes)
+                .ThenBy(p => p.Name)
+                .ToList();
+
+            var projectCount = Math.Max(1, orderedProjects.Count);
+            var empStartRow = currentRow;
+            var empEndRow = currentRow + projectCount - 1;
+            var zebraBg = (empIndex % 2 == 1) ? XLColor.FromHtml("#F8FAFC") : XLColor.White;
+
+            for (int p = 0; p < projectCount; p++)
+            {
+                var r = empStartRow + p;
+                var proj = orderedProjects[p];
+
+                // Column B: Project Name
+                wsSummary.Cell(r, 2).Value = proj.Name;
+                wsSummary.Cell(r, 2).Style.Font.Bold = true;
+                wsSummary.Cell(r, 2).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                // Column C: Project Code
+                wsSummary.Cell(r, 3).Value = proj.Code;
+                wsSummary.Cell(r, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                wsSummary.Cell(r, 3).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                // Column D: Total hrs (decimal) for each project
+                wsSummary.Cell(r, 4).Value = proj.HoursDec;
+                wsSummary.Cell(r, 4).Style.NumberFormat.Format = "0.00";
+                wsSummary.Cell(r, 4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                wsSummary.Cell(r, 4).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                // Column I: List of non duplicate tasks
+                wsSummary.Cell(r, 9).Value = proj.TasksDisplay;
+                wsSummary.Cell(r, 9).Style.Alignment.WrapText = true;
+                wsSummary.Cell(r, 9).Style.Alignment.Vertical = XLAlignmentVerticalValues.Top;
+
+                // Row background & borders
+                var rowRange = wsSummary.Range(r, 1, r, 10);
+                rowRange.Style.Fill.BackgroundColor = zebraBg;
+                rowRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+                rowRange.Style.Border.InsideBorderColor = XLColor.FromHtml("#E2E8F0");
+                rowRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                rowRange.Style.Border.OutsideBorderColor = XLColor.FromHtml("#CBD5E1");
+            }
+
+            // If multiple projects, merge employee-level columns vertically
+            if (projectCount > 1)
+            {
+                wsSummary.Range(empStartRow, 1, empEndRow, 1).Merge();
+                wsSummary.Range(empStartRow, 5, empEndRow, 5).Merge();
+                wsSummary.Range(empStartRow, 6, empEndRow, 6).Merge();
+                wsSummary.Range(empStartRow, 7, empEndRow, 7).Merge();
+                wsSummary.Range(empStartRow, 8, empEndRow, 8).Merge();
+                wsSummary.Range(empStartRow, 10, empEndRow, 10).Merge();
+            }
+
+            // Column A: Name of Employee
+            wsSummary.Cell(empStartRow, 1).Value = empName;
+            wsSummary.Cell(empStartRow, 1).Style.Font.Bold = true;
+            wsSummary.Cell(empStartRow, 1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+            // Column E: Total Billable
+            wsSummary.Cell(empStartRow, 5).Value = empBillableHoursDec;
+            wsSummary.Cell(empStartRow, 5).Style.NumberFormat.Format = "0.00";
+            wsSummary.Cell(empStartRow, 5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            wsSummary.Cell(empStartRow, 5).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+            // Column F: Total Non Billable
+            wsSummary.Cell(empStartRow, 6).Value = empNonBillableHoursDec;
+            wsSummary.Cell(empStartRow, 6).Style.NumberFormat.Format = "0.00";
+            wsSummary.Cell(empStartRow, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            wsSummary.Cell(empStartRow, 6).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+            // Column G: Total hrs
+            wsSummary.Cell(empStartRow, 7).Value = empTotalHoursDec;
+            wsSummary.Cell(empStartRow, 7).Style.NumberFormat.Format = "0.00";
+            wsSummary.Cell(empStartRow, 7).Style.Font.Bold = true;
+            wsSummary.Cell(empStartRow, 7).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            wsSummary.Cell(empStartRow, 7).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+            // Column H: % of billed hrs of total hrs
+            wsSummary.Cell(empStartRow, 8).Value = empBilledPct;
+            wsSummary.Cell(empStartRow, 8).Style.NumberFormat.Format = "0.0%";
+            wsSummary.Cell(empStartRow, 8).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            wsSummary.Cell(empStartRow, 8).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+            // Column J: Leave Taken
+            wsSummary.Cell(empStartRow, 10).Value = empLeavesTaken;
+            wsSummary.Cell(empStartRow, 10).Style.NumberFormat.Format = "0.#";
+            wsSummary.Cell(empStartRow, 10).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            wsSummary.Cell(empStartRow, 10).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+            currentRow = empEndRow + 1;
+            empIndex++;
+        }
+
+        if (empIndex == 0)
         {
             wsSummary.Range(5, 1, 5, 10).Merge();
-            wsSummary.Cell(5, 1).Value = "No time entries found for the selected date range.";
+            wsSummary.Cell(5, 1).Value = "No time entries or assigned projects found for the selected date range.";
             wsSummary.Cell(5, 1).Style.Font.Italic = true;
             wsSummary.Cell(5, 1).Style.Font.FontColor = XLColor.FromHtml("#64748B");
             wsSummary.Cell(5, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
@@ -185,136 +477,6 @@ public class ReportService : IReportService
         }
         else
         {
-            int empIndex = 0;
-            foreach (var empGroup in employeeGroups)
-            {
-                var empName = empGroup.First().User?.FullName ?? "Unknown";
-                var empEntries = empGroup.ToList();
-                var empTotalMinutes = empEntries.Sum(e => e.DurationMinutes);
-                var empBillableMinutes = empEntries.Where(IsBillableEntry).Sum(e => e.DurationMinutes);
-                var empNonBillableMinutes = empTotalMinutes - empBillableMinutes;
-
-                var empTotalHoursDec = Math.Round(empTotalMinutes / 60.0, 2);
-                var empBillableHoursDec = Math.Round(empBillableMinutes / 60.0, 2);
-                var empNonBillableHoursDec = Math.Round(empNonBillableMinutes / 60.0, 2);
-                var empBilledPct = empTotalMinutes > 0 ? (double)empBillableMinutes / empTotalMinutes : 0.0;
-
-                var empLeaves = leavesByUser.TryGetValue(empGroup.Key, out var userLeaves) ? userLeaves : new List<Leave>();
-                var empLeavesTaken = CalculateLeaveDays(empLeaves);
-
-                // Group by project for this employee
-                var projectGroups = empEntries
-                    .GroupBy(e => e.ProjectId)
-                    .OrderByDescending(g => g.Sum(e => e.DurationMinutes))
-                    .ToList();
-
-                var projectCount = Math.Max(1, projectGroups.Count);
-                var empStartRow = currentRow;
-                var empEndRow = currentRow + projectCount - 1;
-                var zebraBg = (empIndex % 2 == 1) ? XLColor.FromHtml("#F8FAFC") : XLColor.White;
-
-                for (int p = 0; p < projectCount; p++)
-                {
-                    var r = empStartRow + p;
-                    var projGroup = p < projectGroups.Count ? projectGroups[p] : null;
-
-                    var projName = projGroup?.First().Project?.Name ?? "No Project";
-                    var projCode = projGroup?.First().Project?.Code ?? "-";
-                    var projMinutes = projGroup?.Sum(e => e.DurationMinutes) ?? 0;
-                    var projHoursDec = Math.Round(projMinutes / 60.0, 2);
-
-                    var uniqueTasks = projGroup != null
-                        ? projGroup
-                            .Select(e => e.Description?.Trim())
-                            .Where(d => !string.IsNullOrWhiteSpace(d))
-                            .OfType<string>()
-                            .Distinct()
-                            .ToList()
-                        : new List<string>();
-
-                    var tasksDisplay = uniqueTasks.Count > 0 ? string.Join(Environment.NewLine, uniqueTasks) : "-";
-
-                    // Column B: Project Name
-                    wsSummary.Cell(r, 2).Value = projName;
-                    wsSummary.Cell(r, 2).Style.Font.Bold = true;
-                    wsSummary.Cell(r, 2).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-
-                    // Column C: Project Code
-                    wsSummary.Cell(r, 3).Value = projCode;
-                    wsSummary.Cell(r, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                    wsSummary.Cell(r, 3).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-
-                    // Column D: Total hrs (decimal) for each project
-                    wsSummary.Cell(r, 4).Value = projHoursDec;
-                    wsSummary.Cell(r, 4).Style.NumberFormat.Format = "0.00";
-                    wsSummary.Cell(r, 4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
-                    wsSummary.Cell(r, 4).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-
-                    // Column I: List of non duplicate tasks
-                    wsSummary.Cell(r, 9).Value = tasksDisplay;
-                    wsSummary.Cell(r, 9).Style.Alignment.WrapText = true;
-                    wsSummary.Cell(r, 9).Style.Alignment.Vertical = XLAlignmentVerticalValues.Top;
-
-                    // Row background & borders
-                    var rowRange = wsSummary.Range(r, 1, r, 10);
-                    rowRange.Style.Fill.BackgroundColor = zebraBg;
-                    rowRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
-                    rowRange.Style.Border.InsideBorderColor = XLColor.FromHtml("#E2E8F0");
-                    rowRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-                    rowRange.Style.Border.OutsideBorderColor = XLColor.FromHtml("#CBD5E1");
-                }
-
-                // If multiple projects, merge employee-level columns vertically
-                if (projectCount > 1)
-                {
-                    wsSummary.Range(empStartRow, 1, empEndRow, 1).Merge();
-                    wsSummary.Range(empStartRow, 5, empEndRow, 5).Merge();
-                    wsSummary.Range(empStartRow, 6, empEndRow, 6).Merge();
-                    wsSummary.Range(empStartRow, 7, empEndRow, 7).Merge();
-                    wsSummary.Range(empStartRow, 8, empEndRow, 8).Merge();
-                    wsSummary.Range(empStartRow, 10, empEndRow, 10).Merge();
-                }
-
-                // Column A: Name of Employee
-                wsSummary.Cell(empStartRow, 1).Value = empName;
-                wsSummary.Cell(empStartRow, 1).Style.Font.Bold = true;
-                wsSummary.Cell(empStartRow, 1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-
-                // Column E: Total Billable
-                wsSummary.Cell(empStartRow, 5).Value = empBillableHoursDec;
-                wsSummary.Cell(empStartRow, 5).Style.NumberFormat.Format = "0.00";
-                wsSummary.Cell(empStartRow, 5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
-                wsSummary.Cell(empStartRow, 5).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-
-                // Column F: Total Non Billable
-                wsSummary.Cell(empStartRow, 6).Value = empNonBillableHoursDec;
-                wsSummary.Cell(empStartRow, 6).Style.NumberFormat.Format = "0.00";
-                wsSummary.Cell(empStartRow, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
-                wsSummary.Cell(empStartRow, 6).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-
-                // Column G: Total hrs
-                wsSummary.Cell(empStartRow, 7).Value = empTotalHoursDec;
-                wsSummary.Cell(empStartRow, 7).Style.NumberFormat.Format = "0.00";
-                wsSummary.Cell(empStartRow, 7).Style.Font.Bold = true;
-                wsSummary.Cell(empStartRow, 7).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
-                wsSummary.Cell(empStartRow, 7).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-
-                // Column H: % of billed hrs of total hrs
-                wsSummary.Cell(empStartRow, 8).Value = empBilledPct;
-                wsSummary.Cell(empStartRow, 8).Style.NumberFormat.Format = "0.0%";
-                wsSummary.Cell(empStartRow, 8).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
-                wsSummary.Cell(empStartRow, 8).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-
-                // Column J: Leave Taken
-                wsSummary.Cell(empStartRow, 10).Value = empLeavesTaken;
-                wsSummary.Cell(empStartRow, 10).Style.NumberFormat.Format = "0.#";
-                wsSummary.Cell(empStartRow, 10).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
-                wsSummary.Cell(empStartRow, 10).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-
-                currentRow = empEndRow + 1;
-                empIndex++;
-            }
-
             // Grand Total Row
             wsSummary.Range(currentRow, 1, currentRow, 3).Merge();
             wsSummary.Cell(currentRow, 1).Value = "Grand Total";
