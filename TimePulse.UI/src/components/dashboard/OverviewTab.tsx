@@ -1,6 +1,6 @@
 import { WelcomeCard } from './WelcomeCard'
 import { SummaryWidget } from './SummaryWidget'
-import { Sparkles, Shield, Clock, Users, Settings, ArrowRight } from 'lucide-react'
+import { Shield, Clock, Users, Settings, ArrowRight } from 'lucide-react'
 import type { UserProfile } from '../../api/authApi'
 import type { BrandSettings } from '../../api/brandingApi'
 import type { TabId } from '../layout/Sidebar'
@@ -20,14 +20,7 @@ export function OverviewTab({ user, branding, onNavigateTab }: OverviewTabProps)
       <WelcomeCard userName={user?.name || user?.fullName} appName={branding.appName} />
 
       {/* Quick Summary Widgets */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <SummaryWidget
-          title="App Name"
-          value={branding.appName || '(Logo only)'}
-          subtitle={branding.isCustom ? 'Custom Branding Active' : 'Default Branding'}
-          icon={Sparkles}
-          iconColor="text-indigo-500"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
         <SummaryWidget
           title="Your Role"
